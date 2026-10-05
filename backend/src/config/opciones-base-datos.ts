@@ -19,13 +19,25 @@ export interface CredencialesBaseDatos {
  * `synchronize` no se activa en ningún entorno: el esquema cambia sólo por
  * migración, revisable en el diff y reversible.
  */
+/** Un esquema sólo puede ser un identificador simple: va dentro de search_path. */
+const ESQUEMA_VALIDO = /^[a-z_][a-z0-9_]{0,62}$/;
+
 export function construirOpcionesBaseDatos(credenciales: CredencialesBaseDatos): DataSourceOptions {
   const { schema, ...conexion } = credenciales;
+
+  if (schema && !ESQUEMA_VALIDO.test(schema)) {
+    throw new Error(`DB_SCHEMA "${schema}" no es válido: usa minúsculas, dígitos y guiones bajos.`);
+  }
 
   return {
     type: 'postgres',
     ...conexion,
     schema,
+    // `schema` sólo afecta a las consultas que genera TypeORM; el SQL escrito a
+    // mano en las migraciones no lleva prefijo y acabaría en el search_path de
+    // la sesión, que por defecto es `public`.  Fijarlo en la conexión hace que
+    // todo —migraciones incluidas— caiga en el esquema configurado.
+    ...(schema ? { extra: { options: `-c search_path=${schema}` } } : {}),
     synchronize: false,
     migrationsRun: false,
     entities: [__dirname + '/../modules/**/*.entity{.ts,.js}'],
