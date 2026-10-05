@@ -11,6 +11,11 @@ import { BooksModule } from './modules/books/books.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      // En tests la configuración viene del entorno, nunca del .env del
+      // desarrollador: ConfigModule da prioridad al archivo, así que sin esto
+      // un .env local podría cambiar el resultado de los tests (por ejemplo,
+      // reactivando una tasa de respaldo que el test quiere desactivar).
+      ignoreEnvFile: process.env.NODE_ENV === 'test',
       // El proceso no arranca con una configuración inválida: es preferible un
       // fallo ruidoso al iniciar que un 500 sorpresa en la primera petición
       // que toque la variable que faltaba.
