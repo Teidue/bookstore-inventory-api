@@ -57,10 +57,10 @@ export class BooksController {
   @Get('low-stock')
   @ApiOperation({ summary: 'Libros con inventario bajo. Umbral por defecto: 10.' })
   stockBajo(@Query() filtros: FiltrarLibrosDto): Promise<RespuestaPaginada<LibroRespuesta>> {
-    // El umbral es opcional en la URL; el enunciado fija 10 por defecto en
-    // este endpoint.  Se modifica la instancia en vez de esparcirla, porque
-    // `offset` es un getter y un objeto literal lo perdería.
-    filtros.low_stock_threshold ??= 10;
+    // El enunciado documenta el parámetro como `threshold` y fija 10 por
+    // defecto en este endpoint.  Se modifica la instancia en vez de
+    // esparcirla, porque `offset` es un getter y un literal lo perdería.
+    filtros.low_stock_threshold = filtros.threshold ?? filtros.low_stock_threshold ?? 10;
     return this.booksService.listar(filtros);
   }
 

@@ -17,6 +17,20 @@ export class FiltrarLibrosDto extends PaginacionQueryDto {
   @MaxLength(120)
   category?: string;
 
+  /**
+   * Alias de `low_stock_threshold` con el nombre que documenta el enunciado
+   * para `/books/low-stock?threshold=10`.
+   *
+   * Tiene que estar declarado aquí: el ValidationPipe funciona en modo
+   * whitelist y descarta cualquier parámetro que no aparezca en el DTO, así
+   * que sin esta propiedad el umbral llegaría siempre vacío.
+   */
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => (value === '' ? undefined : Number(value)))
+  @IsInt({ message: 'threshold debe ser un número entero.' })
+  @Min(0, { message: 'threshold no puede ser negativo.' })
+  threshold?: number;
+
   /** Devuelve sólo los libros con `stock_quantity` menor o igual al umbral. */
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => (value === '' ? undefined : Number(value)))
