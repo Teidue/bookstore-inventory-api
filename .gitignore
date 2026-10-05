@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Entorno (el .env real nunca se versiona)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cobertura y cachés
+coverage/
+.eslintcache
+.vite/
+
+# Sistema operativo y editores
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
