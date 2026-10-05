@@ -51,7 +51,13 @@ export class ExchangeRateService {
     this.url = configService.getOrThrow<string>('EXCHANGE_API_URL');
     this.timeoutMs = configService.getOrThrow<number>('EXCHANGE_TIMEOUT_MS');
     this.ttlMs = configService.getOrThrow<number>('EXCHANGE_CACHE_TTL_SECONDS') * 1000;
-    this.tasaRespaldo = configService.get<number>('EXCHANGE_FALLBACK_RATE');
+    // Una variable vacía en el entorno llega como cadena vacía, no como
+    // `undefined`: sin esta normalización, "sin respaldo" se interpretaría
+    // como una tasa válida y el precio saldría NaN en lugar de un 503.
+    const respaldo = configService.get<string | number>('EXCHANGE_FALLBACK_RATE');
+    const respaldoNumerico = respaldo === undefined || respaldo === '' ? NaN : Number(respaldo);
+    this.tasaRespaldo =
+      Number.isFinite(respaldoNumerico) && respaldoNumerico > 0 ? respaldoNumerico : undefined;
   }
 
   /**
