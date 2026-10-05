@@ -1,0 +1,64 @@
+# ---------------------------------------------------------------------------
+# Levanta todo el sistema con un solo comando:
+#
+#   docker compose up --build
+#
+#   - base de datos PostgreSQL con volumen persistente
+#   - API en http://localhost:3000 (migrada y sembrada al arrancar)
+#   - cliente web en http://localhost:8080
+# ---------------------------------------------------------------------------
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-bookstore}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bookstore}
+      POSTGRES_DB: ${DB_NAME:-bookstore_inventory}
+    volumes:
+      - datos-postgres:/var/lib/postgresql/data
+    # La API espera a que la base esté realmente lista para aceptar
+    # conexiones, no sólo a que el contenedor exista.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-bookstore} -d ${DB_NAME:-bookstore_inventory}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-bookstore}
+      DB_PASSWORD: ${DB_PASSWORD:-bookstore}
+      DB_NAME: ${DB_NAME:-bookstore_inventory}
+      LOCAL_CURRENCY: ${LOCAL_CURRENCY:-EUR}
+      PROFIT_MARGIN_PERCENTAGE: ${PROFIT_MARGIN_PERCENTAGE:-40}
+      EXCHANGE_API_URL: ${EXCHANGE_API_URL:-https://api.exchangerate-api.com/v4/latest/USD}
+      EXCHANGE_TIMEOUT_MS: ${EXCHANGE_TIMEOUT_MS:-5000}
+      EXCHANGE_CACHE_TTL_SECONDS: ${EXCHANGE_CACHE_TTL_SECONDS:-600}
+      EXCHANGE_FALLBACK_RATE: ${EXCHANGE_FALLBACK_RATE:-0.92}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    ports:
+      - '8080:80'
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  datos-postgres:
