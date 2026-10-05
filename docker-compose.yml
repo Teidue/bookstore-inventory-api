@@ -15,6 +15,11 @@ services:
       POSTGRES_USER: ${DB_USER:-bookstore}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-bookstore}
       POSTGRES_DB: ${DB_NAME:-bookstore_inventory}
+    # Se publica el puerto para poder conectarse desde el host (un cliente
+    # gráfico, o los tests de integración) sin chocar con un PostgreSQL local
+    # que ya ocupe el 5432.
+    ports:
+      - '55432:5432'
     volumes:
       - datos-postgres:/var/lib/postgresql/data
     # La API espera a que la base esté realmente lista para aceptar

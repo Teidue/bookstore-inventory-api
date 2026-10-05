@@ -45,6 +45,14 @@ docker compose up --build
 La API aplica las migraciones y carga el catálogo de ejemplo (14 libros) al
 arrancar. Ambos pasos son idempotentes: reiniciar no duplica datos.
 
+El contenedor de PostgreSQL publica el puerto **55432** en el host, para poder
+conectarse con un cliente gráfico o lanzar los tests de integración contra él
+sin chocar con un PostgreSQL local que ya ocupe el 5432:
+
+```bash
+npm --prefix backend run test:e2e   # con DB_PORT=55432 en el entorno
+```
+
 Para parar y borrar también los datos:
 
 ```bash
