@@ -1,0 +1,293 @@
+{
+  "info": {
+    "name": "Bookstore Inventory API",
+    "description": "Colección de la API de gestión de inventario de librerías.\n\nAntes de empezar, comprueba la variable `base_url` (por defecto http://localhost:3000).\n\nLas peticiones de creación guardan el id del libro en la variable `book_id`, de modo que la carpeta se puede ejecutar de arriba abajo con el Runner sin tocar nada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000", "type": "string" },
+    { "key": "book_id", "value": "1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "CRUD de libros",
+      "item": [
+        {
+          "name": "Crear libro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 201', () => pm.response.to.have.status(201));",
+                  "const libro = pm.response.json();",
+                  "pm.test('el precio de venta nace nulo', () => pm.expect(libro.selling_price_local).to.be.null);",
+                  "pm.collectionVariables.set('book_id', libro.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/books", "host": ["{{base_url}}"], "path": ["books"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"El Quijote\",\n  \"author\": \"Miguel de Cervantes\",\n  \"isbn\": \"978-84-376-0494-7\",\n  \"cost_usd\": 15.99,\n  \"stock_quantity\": 25,\n  \"category\": \"Literatura Clásica\",\n  \"supplier_country\": \"ES\"\n}"
+            },
+            "description": "Crea un libro. `selling_price_local` no se acepta en el cuerpo: lo calcula el endpoint de precio."
+          }
+        },
+        {
+          "name": "Listar libros (paginado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('incluye metadatos de paginación', () => {",
+                  "  pm.expect(cuerpo.meta).to.have.property('total');",
+                  "  pm.expect(cuerpo.meta).to.have.property('total_pages');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/books?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["books"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "category", "value": "Técnico", "disabled": true },
+                { "key": "search", "value": "Cervantes", "disabled": true },
+                { "key": "low_stock_threshold", "value": "10", "disabled": true }
+              ]
+            },
+            "description": "Listado paginado. Admite además los filtros opcionales por categoría, texto libre y stock bajo."
+          }
+        },
+        {
+          "name": "Obtener libro por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('responde 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["books", "{{book_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar libro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('responde 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["books", "{{book_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"El Quijote (edición anotada)\",\n  \"author\": \"Miguel de Cervantes\",\n  \"isbn\": \"978-84-376-0494-7\",\n  \"cost_usd\": 18.50,\n  \"stock_quantity\": 30,\n  \"category\": \"Literatura Clásica\",\n  \"supplier_country\": \"ES\"\n}"
+            },
+            "description": "PUT sustituye el recurso completo: el cuerpo debe traer todos los campos."
+          }
+        },
+        {
+          "name": "Eliminar libro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('responde 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["books", "{{book_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Búsquedas",
+      "item": [
+        {
+          "name": "Buscar por categoría",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/books/search?category=Técnico",
+              "host": ["{{base_url}}"],
+              "path": ["books", "search"],
+              "query": [{ "key": "category", "value": "Técnico" }]
+            },
+            "description": "La comparación no distingue mayúsculas."
+          }
+        },
+        {
+          "name": "Libros con stock bajo",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/books/low-stock?threshold=10",
+              "host": ["{{base_url}}"],
+              "path": ["books", "low-stock"],
+              "query": [{ "key": "threshold", "value": "10" }]
+            },
+            "description": "Sin `threshold`, el umbral por defecto es 10."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cálculo de precio",
+      "item": [
+        {
+          "name": "Calcular precio de venta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const calculo = pm.response.json();",
+                  "pm.test('devuelve el desglose completo', () => {",
+                  "  ['book_id','cost_usd','exchange_rate','cost_local','margin_percentage','selling_price_local','currency','calculation_timestamp'].forEach((campo) => {",
+                  "    pm.expect(calculo).to.have.property(campo);",
+                  "  });",
+                  "});",
+                  "pm.test('aplica el margen del 40%', () => {",
+                  "  const esperado = Math.round(calculo.cost_local * 1.4 * 100) / 100;",
+                  "  pm.expect(calculo.selling_price_local).to.eql(esperado);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}/calculate-price",
+              "host": ["{{base_url}}"],
+              "path": ["books", "{{book_id}}", "calculate-price"]
+            },
+            "description": "Consulta la tasa USD -> moneda local, aplica el 40% de margen, guarda `selling_price_local` y devuelve el desglose.\n\n`rate_source` indica si la tasa vino de la API, de la caché o del respaldo configurado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Errores esperados",
+      "item": [
+        {
+          "name": "400 - datos inválidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('trae un código estable', () => pm.expect(pm.response.json().code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/books", "host": ["{{base_url}}"], "path": ["books"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Libro inválido\",\n  \"author\": \"Autor\",\n  \"isbn\": \"12345\",\n  \"cost_usd\": 0,\n  \"stock_quantity\": -3,\n  \"category\": \"Novela\",\n  \"supplier_country\": \"ESP\"\n}"
+            },
+            "description": "ISBN de 5 dígitos, coste 0, stock negativo y país de 3 letras: cuatro reglas rotas a la vez."
+          }
+        },
+        {
+          "name": "404 - libro inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test('código LIBRO_NO_ENCONTRADO', () => pm.expect(pm.response.json().code).to.eql('LIBRO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/books/999999",
+              "host": ["{{base_url}}"],
+              "path": ["books", "999999"]
+            }
+          }
+        },
+        {
+          "name": "409 - ISBN duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('código ISBN_DUPLICADO', () => pm.expect(pm.response.json().code).to.eql('ISBN_DUPLICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/books", "host": ["{{base_url}}"], "path": ["books"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"El Quijote (duplicado)\",\n  \"author\": \"Miguel de Cervantes\",\n  \"isbn\": \"9788437604947\",\n  \"cost_usd\": 15.99,\n  \"stock_quantity\": 5,\n  \"category\": \"Literatura Clásica\",\n  \"supplier_country\": \"ES\"\n}"
+            },
+            "description": "Mismo ISBN que el del seed, escrito sin guiones: la unicidad se impone sobre el ISBN normalizado."
+          }
+        }
+      ]
+    }
+  ]
+}
