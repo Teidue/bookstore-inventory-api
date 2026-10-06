@@ -9,23 +9,33 @@ interface InventorySummaryProps {
   onFilterLowStock: (threshold: string) => void;
 }
 
+type Tone = 'accent' | 'caution' | 'critical';
+
 interface CardProps {
   label: string;
   hint: string;
   value: number | null;
   icon: LucideIcon;
-  tone: 'neutral' | 'caution' | 'critical';
+  tone: Tone;
   active: boolean;
+  delay: number;
   onClick?: () => void;
 }
 
-const TONES = {
-  neutral: 'text-ink-subtle',
-  caution: 'text-caution',
-  critical: 'text-critical',
-} as const;
+/** Cada tarjeta tiene su color: el icono tintado se asocia al estado de un vistazo. */
+const CHIP: Record<Tone, string> = {
+  accent: 'bg-accent-soft text-accent',
+  caution: 'bg-caution-soft text-caution',
+  critical: 'bg-critical-soft text-critical',
+};
 
-function SummaryCard({ label, hint, value, icon: Icon, tone, active, onClick }: CardProps) {
+const ACTIVE: Record<Tone, string> = {
+  accent: 'border-accent/50 ring-accent/25',
+  caution: 'border-caution/50 ring-caution/25',
+  critical: 'border-critical/50 ring-critical/25',
+};
+
+function SummaryCard({ label, hint, value, icon: Icon, tone, active, delay, onClick }: CardProps) {
   const interactive = onClick !== undefined;
 
   return (
@@ -34,20 +44,32 @@ function SummaryCard({ label, hint, value, icon: Icon, tone, active, onClick }: 
       onClick={onClick}
       disabled={!interactive}
       aria-pressed={interactive ? active : undefined}
-      className={`flex items-start justify-between gap-3 rounded-xl border bg-surface px-4 py-3.5 text-left shadow-card transition-[border-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 ${
-        active ? 'border-accent ring-1 ring-accent/20' : 'border-line'
-      } ${interactive ? 'cursor-pointer hover:border-ink-subtle/50 hover:shadow-raised' : 'cursor-default'}`}
+      style={{ animationDelay: `${delay}ms` }}
+      className={`animate-rise group flex items-center gap-4 rounded-xl border bg-surface px-4 py-4 text-left shadow-card transition-[border-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
+        active ? `${ACTIVE[tone]} ring-2` : 'border-line'
+      } ${
+        interactive
+          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-raised'
+          : 'cursor-default'
+      }`}
     >
+      <span
+        className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-transform duration-200 ${CHIP[tone]} ${
+          interactive ? 'group-hover:scale-105' : ''
+        }`}
+        aria-hidden="true"
+      >
+        <Icon size={20} strokeWidth={1.9} />
+      </span>
       <div className="min-w-0">
         <p className="text-[12px] font-medium text-ink-muted">{label}</p>
-        <p className="mt-1.5 text-[1.6rem] leading-none font-semibold tabular tracking-[-0.02em] text-ink">
+        <p className="mt-1 text-[1.65rem] leading-none font-semibold tabular tracking-[-0.025em] text-ink">
           {/* El guion ocupa el mismo sitio que la cifra: al llegar el dato no
               se mueve nada de lo que hay debajo. */}
           {value === null ? <span className="text-ink-subtle">—</span> : value}
         </p>
-        <p className="mt-1.5 text-[11px] text-ink-subtle">{hint}</p>
+        <p className="mt-1.5 truncate text-[11px] text-ink-subtle">{hint}</p>
       </div>
-      <Icon size={17} className={`shrink-0 ${TONES[tone]}`} aria-hidden="true" />
     </button>
   );
 }
@@ -72,8 +94,9 @@ export function InventorySummary({
         hint="Títulos distintos dados de alta"
         value={counts?.total ?? null}
         icon={Boxes}
-        tone="neutral"
+        tone="accent"
         active={false}
+        delay={0}
       />
       <SummaryCard
         label="Inventario bajo"
@@ -82,6 +105,7 @@ export function InventorySummary({
         icon={TriangleAlert}
         tone="caution"
         active={activeThreshold === String(LOW_STOCK_THRESHOLD)}
+        delay={60}
         onClick={() => onFilterLowStock(String(LOW_STOCK_THRESHOLD))}
       />
       <SummaryCard
@@ -91,6 +115,7 @@ export function InventorySummary({
         icon={CircleSlash}
         tone="critical"
         active={activeThreshold === '0'}
+        delay={120}
         onClick={() => onFilterLowStock('0')}
       />
     </div>

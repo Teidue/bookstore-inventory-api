@@ -41,7 +41,7 @@ export function PriceBreakdown({ calculation }: { calculation: PriceCalculation 
 
       {/* El resultado se separa del desglose: es la cifra que se busca, no un
           renglón más de la lista. */}
-      <div className="mt-3 flex items-baseline justify-between gap-4 rounded-lg bg-accent-soft px-3.5 py-3 ring-1 ring-accent/12 ring-inset">
+      <div className="animate-pop mt-3 flex items-baseline justify-between gap-4 rounded-xl bg-linear-to-br from-accent-soft to-surface px-4 py-3.5 ring-1 ring-accent/20 ring-inset">
         <span className="text-[13px] font-medium text-ink">Precio de venta sugerido</span>
         <span className="text-[1.25rem] leading-none font-semibold tabular tracking-[-0.02em] text-accent-strong">
           {formatCurrency(calculation.selling_price_local, calculation.currency)}

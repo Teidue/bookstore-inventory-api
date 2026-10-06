@@ -5,10 +5,10 @@ export function Brand() {
   return (
     <>
       <span
-        className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white shadow-card"
+        className="grid h-8.5 w-8.5 place-items-center rounded-[10px] bg-linear-to-br from-brand to-brand-strong text-white shadow-brand"
         aria-hidden="true"
       >
-        <Library size={17} strokeWidth={2} />
+        <Library size={17} strokeWidth={2.1} />
       </span>
       <span className="flex flex-col leading-none">
         <span className="text-[14px] font-semibold tracking-[-0.015em] text-ink">

@@ -29,7 +29,7 @@ export function BookFiltersPanel({
 
   return (
     <div
-      className="mb-4 rounded-xl border border-line bg-surface p-4 shadow-card"
+      className="animate-rise mb-4 rounded-xl border border-line bg-surface p-4 shadow-card [animation-delay:180ms]"
       role="search"
       aria-label="Filtros del inventario"
     >

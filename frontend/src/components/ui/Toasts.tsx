@@ -38,7 +38,7 @@ export function Toasts() {
         return (
           <div
             key={id}
-            className="flex items-start gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-overlay"
+            className="animate-toast-in flex items-start gap-3 rounded-xl border border-line bg-surface/95 px-4 py-3 shadow-overlay backdrop-blur"
             data-testid="toast"
             data-toast-type={type}
           >

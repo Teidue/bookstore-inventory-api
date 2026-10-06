@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /** Superficie base de la aplicación: todo el contenido vive dentro de una. */
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-line bg-surface shadow-card ${className}`}>
+    <section className={`animate-rise rounded-xl border border-line bg-surface shadow-card ${className}`}>
       {children}
     </section>
   );

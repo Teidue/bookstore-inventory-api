@@ -5,7 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Gestión de inventario de librerías con cálculo de precio de venta" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" content="#4f46e5" />
+    <script>
+      // Fija el tema antes del primer pintado: si lo hiciera React, quien
+      // prefiere oscuro vería un destello blanco en cada carga.
+      try {
+        var stored = localStorage.getItem('bookstore-theme');
+        var dark =
+          stored === 'dark' ||
+          (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
     <title>Bookstore Inventory</title>
   </head>
   <body>

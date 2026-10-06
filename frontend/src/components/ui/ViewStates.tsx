@@ -23,7 +23,7 @@ export function Loading({ message = 'Cargando...' }: { message?: string }) {
   return (
     <div className={container('plain')} role="status" aria-live="polite">
       <span
-        className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-line-strong border-t-ink"
+        className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-line-strong border-t-brand"
         aria-hidden="true"
       />
       <p className="text-[13px] text-ink-muted">{message}</p>

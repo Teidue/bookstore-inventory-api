@@ -10,6 +10,8 @@ interface BookRowProps {
   book: Book;
   currency: string;
   calculating: boolean;
+  /** Posición en la página, para escalonar la animación de entrada. */
+  index: number;
   onCalculatePrice: (book: Book) => void;
   onDelete: (book: Book) => void;
 }
@@ -18,17 +20,25 @@ const CELL = 'px-5 py-3 align-middle';
 const NUMBER_CELL = `${CELL} text-right tabular whitespace-nowrap`;
 
 /** Fila de la tabla de inventario. */
-export function BookRow({ book, currency, calculating, onCalculatePrice, onDelete }: BookRowProps) {
+export function BookRow({
+  book,
+  currency,
+  calculating,
+  index,
+  onCalculatePrice,
+  onDelete,
+}: BookRowProps) {
   return (
     <tr
-      className="group border-b border-line transition-colors last:border-b-0 hover:bg-sunken"
+      className="animate-rise group border-b border-line transition-colors last:border-b-0 hover:bg-accent-soft/50"
+      style={{ animationDelay: `${Math.min(index, 10) * 30}ms` }}
       data-testid="book-row"
     >
       <td className={CELL}>
         <Link
           to={`/books/${book.id}`}
           title={book.title}
-          className="block truncate rounded text-[14px] font-medium text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
+          className="block truncate rounded text-[14px] font-medium text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
         >
           {book.title}
         </Link>

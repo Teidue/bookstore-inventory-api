@@ -5,26 +5,29 @@
  * deben poder parecer botones sin dejar de ser `<a>`: así el aspecto vive en un
  * único lugar y no se duplica una lista larga de utilidades por cada enlace.
  *
- * La acción principal es tinta, no azul. El azul queda libre para señalar lo
- * que está activo o enfocado, que es información; un botón azul en cada
- * pantalla sólo es decoración y compite con esa señal.
+ * La acción principal lleva el color de marca con un degradado casi
+ * imperceptible y un reflejo superior de un píxel: es lo que le da relieve y
+ * hace que parezca pulsable sin recurrir a un borde o a una sombra pesada.
  */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSoft';
 export type ButtonSize = 'sm' | 'md' | 'icon' | 'iconSm';
 
 const BASE =
   'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium whitespace-nowrap ' +
-  'transition-[background-color,border-color,color,box-shadow] duration-150 ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-1 ' +
-  'focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-45';
+  'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ' +
+  'active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ' +
+  'focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-45';
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-ink text-white shadow-card hover:bg-ink/88 active:bg-ink',
+  primary:
+    'bg-linear-to-b from-brand to-brand-strong text-white shadow-brand hover:brightness-110',
   secondary:
-    'border border-line-strong bg-surface text-ink shadow-card hover:border-ink-subtle/60 hover:bg-sunken',
-  ghost: 'text-ink-muted hover:bg-ink/5 hover:text-ink',
-  danger: 'bg-critical text-white shadow-card hover:bg-critical/90',
-  dangerSoft: 'border border-transparent text-ink-subtle hover:border-critical/25 hover:bg-critical-soft hover:text-critical',
+    'border border-line-strong bg-surface text-ink shadow-card hover:border-accent/40 hover:bg-accent-soft hover:text-accent-strong',
+  ghost: 'text-ink-muted hover:bg-accent-soft hover:text-accent-strong',
+  danger:
+    'bg-linear-to-b from-critical to-critical/85 text-white shadow-card hover:brightness-110',
+  dangerSoft:
+    'border border-transparent text-ink-subtle hover:border-critical/25 hover:bg-critical-soft hover:text-critical',
 };
 
 const SIZES: Record<ButtonSize, string> = {

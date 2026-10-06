@@ -36,7 +36,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 const HEADER_CELL =
-  'px-5 py-2.5 text-left text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-ink-subtle uppercase';
+  'px-5 py-3 text-left text-[11px] font-semibold tracking-[0.05em] whitespace-nowrap text-ink-subtle uppercase';
 
 export function Dashboard() {
   const { notify } = useToasts();
@@ -271,10 +271,11 @@ export function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {result.data.map((book) => (
+                    {result.data.map((book, index) => (
                       <BookRow
                         key={book.id}
                         book={book}
+                        index={index}
                         currency={LOCAL_CURRENCY}
                         calculating={calculatingId === book.id}
                         onCalculatePrice={calculatePrice}

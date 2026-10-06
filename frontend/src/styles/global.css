@@ -3,46 +3,131 @@
 /**
  * Tokens de diseño.
  *
- * Los colores se nombran por su papel (superficie, línea, tinta) y no por su
- * tono. Así un cambio de paleta es una línea aquí y no una búsqueda de
- * `slate-200` por cincuenta archivos, y al leer un componente se entiende qué
- * hace cada color en lugar de qué color es.
+ * Los colores se nombran por su papel y no por su tono, y el modo oscuro es
+ * una segunda tabla de valores para los MISMOS nombres (más abajo): ningún
+ * componente sabe en qué tema está, así que no hay un solo `dark:` en el
+ * código y añadir un tercer tema sería otro bloque aquí y nada más.
  */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   /* Superficies, de la más al fondo a la más cercana. */
-  --color-canvas: #f6f7f9;
+  --color-canvas: #f3f4fb;
   --color-surface: #ffffff;
-  --color-sunken: #fafbfc;
+  --color-sunken: #f8f9fd;
 
   /* Separadores: el fino para dentro de un panel, el marcado para su borde. */
-  --color-line: #ebedf0;
-  --color-line-strong: #dcdfe4;
+  --color-line: #e6e8f2;
+  --color-line-strong: #d5d9e8;
 
   /* Texto, de más a menos contraste. */
-  --color-ink: #16181d;
-  --color-ink-muted: #5c6470;
-  --color-ink-subtle: #8d949f;
+  --color-ink: #151833;
+  --color-ink-muted: #5a6082;
+  --color-ink-subtle: #8c92b0;
 
-  /* Acento: se reserva para lo activo, lo enfocado y la cifra que importa. */
-  --color-accent: #2563eb;
-  --color-accent-strong: #1d4ed8;
-  --color-accent-soft: #eff4ff;
+  /* Marca: relleno de botones y logotipo. Va aparte del acento porque en
+     oscuro el relleno debe seguir siendo oscuro (para que el texto blanco
+     encima se lea) mientras que el acento de texto debe aclararse. */
+  --color-brand: #4f46e5;
+  --color-brand-strong: #4338ca;
+
+  /* Acento: texto y bordes de lo activo, enfocado o seleccionado. */
+  --color-accent: #4f46e5;
+  --color-accent-strong: #4338ca;
+  --color-accent-soft: #eef0ff;
 
   /* Estados del inventario. */
   --color-positive: #047857;
-  --color-positive-soft: #ecfdf5;
+  --color-positive-soft: #e8faf2;
   --color-caution: #b45309;
-  --color-caution-soft: #fffbeb;
+  --color-caution-soft: #fff7e6;
   --color-critical: #be123c;
-  --color-critical-soft: #fff1f2;
+  --color-critical-soft: #fff0f3;
 
   /* Sombras en dos capas: un contacto corto y una difusa, que es como se
      comporta la luz real. Una sola capa produce el típico halo gris plano. */
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
-  --shadow-raised: 0 2px 4px -2px rgb(16 24 40 / 0.06), 0 4px 10px -2px rgb(16 24 40 / 0.08);
-  --shadow-overlay: 0 8px 16px -6px rgb(16 24 40 / 0.12), 0 24px 48px -12px rgb(16 24 40 / 0.18);
+  --shadow-card: 0 1px 2px rgb(30 27 75 / 0.05), 0 1px 3px rgb(30 27 75 / 0.07);
+  --shadow-raised: 0 2px 4px -2px rgb(30 27 75 / 0.08), 0 8px 18px -4px rgb(30 27 75 / 0.12);
+  --shadow-overlay: 0 8px 16px -6px rgb(30 27 75 / 0.16), 0 28px 56px -12px rgb(30 27 75 / 0.28);
+  --shadow-brand: 0 1px 0 rgb(255 255 255 / 0.18) inset, 0 1px 2px rgb(49 46 129 / 0.35),
+    0 4px 10px -2px rgb(79 70 229 / 0.35);
+
+  /* Movimiento: una curva de desaceleración suave, la misma en todo, para que
+     la interfaz entera se sienta de una pieza. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-rise: rise 0.5s var(--ease-out-soft) both;
+  --animate-toast-in: toast-in 0.4s var(--ease-out-soft) both;
+  --animate-pop: pop 0.22s var(--ease-out-soft) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(16px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+}
+
+/* Tema oscuro: mismos nombres, otros valores. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-canvas: #0a0b14;
+  --color-surface: #11131f;
+  --color-sunken: #0d0f1a;
+
+  --color-line: #1c1f31;
+  --color-line-strong: #2a2e45;
+
+  --color-ink: #eceefa;
+  --color-ink-muted: #a3a9c6;
+  --color-ink-subtle: #6f7596;
+
+  --color-brand: #5b52f0;
+  --color-brand-strong: #4a41dc;
+
+  --color-accent: #9aa2ff;
+  --color-accent-strong: #b7bcff;
+  --color-accent-soft: #1a1c3a;
+
+  --color-positive: #4ade9f;
+  --color-positive-soft: #0b2a20;
+  --color-caution: #fbbf5a;
+  --color-caution-soft: #2c2008;
+  --color-critical: #fb7192;
+  --color-critical-soft: #2f0f1b;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-raised: 0 2px 4px -2px rgb(0 0 0 / 0.5), 0 8px 18px -4px rgb(0 0 0 / 0.5);
+  --shadow-overlay: 0 8px 16px -6px rgb(0 0 0 / 0.6), 0 28px 56px -12px rgb(0 0 0 / 0.7);
+  --shadow-brand: 0 1px 0 rgb(255 255 255 / 0.14) inset, 0 1px 2px rgb(0 0 0 / 0.5),
+    0 4px 12px -2px rgb(91 82 240 / 0.45);
 }
 
 @layer base {
@@ -50,10 +135,26 @@
     /* 15px: la densidad propia de una herramienta de trabajo, sin llegar a la
        letra menuda que obliga a acercarse a la pantalla. */
     font-size: 15px;
+    background-color: var(--color-canvas);
   }
 
   body {
-    @apply bg-canvas text-ink antialiased;
+    @apply text-ink antialiased;
+    min-height: 100vh;
+    /* Un resplandor de marca que se difumina hacia el fondo: da profundidad
+       al lienzo sin añadir ni una sola imagen ni un elemento al DOM. */
+    background-image:
+      radial-gradient(
+        70rem 28rem at 50% -8rem,
+        color-mix(in oklab, var(--color-brand) 13%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        40rem 24rem at 100% 12rem,
+        color-mix(in oklab, var(--color-brand) 6%, transparent),
+        transparent 70%
+      );
+    background-repeat: no-repeat;
   }
 
   /* Los importes se leen en columna: las cifras deben ocupar lo mismo. */
@@ -62,12 +163,26 @@
   }
 
   ::selection {
-    @apply bg-accent/15;
+    background-color: color-mix(in oklab, var(--color-brand) 25%, transparent);
   }
 
   dialog::backdrop {
-    @apply bg-ink/40;
-    backdrop-filter: blur(2px);
+    background: rgb(8 9 20 / 0.55);
+    backdrop-filter: blur(3px);
+  }
+
+  /* Cambio de tema sin salto: los colores se desvanecen en vez de cambiar de
+     golpe. Sólo se activa mientras dura el cambio (ver useTheme), para no
+     ralentizar los hover del día a día. */
+  :root.theme-transition,
+  :root.theme-transition *,
+  :root.theme-transition *::before,
+  :root.theme-transition *::after {
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease,
+      box-shadow 0.3s ease !important;
   }
 
   /* Las flechas del campo numérico desalinean el texto y no aportan nada que
@@ -75,5 +190,16 @@
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button {
     @apply m-0 appearance-none;
+  }
+
+  /* Quien pide menos movimiento en su sistema no debe recibirlo. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

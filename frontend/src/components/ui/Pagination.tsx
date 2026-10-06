@@ -31,9 +31,10 @@ const STEP =
 
 const PAGE =
   'h-8 min-w-8 rounded-md px-2 text-[13px] font-medium tabular transition-colors ' +
-  'text-ink-muted hover:bg-ink/5 hover:text-ink';
+  'text-ink-muted hover:bg-accent-soft hover:text-accent-strong';
 
-const PAGE_CURRENT = 'h-8 min-w-8 rounded-md px-2 text-[13px] font-semibold tabular bg-ink text-white';
+const PAGE_CURRENT =
+  'h-8 min-w-8 rounded-md px-2 text-[13px] font-semibold tabular bg-linear-to-b from-brand to-brand-strong text-white shadow-brand';
 
 /**
  * Controles de página. Los números salen de `meta`, que el servidor calcula
