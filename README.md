@@ -315,7 +315,10 @@ La SPA consume todos los endpoints de la API:
 
 - **Dashboard de inventario**: tabla con paginación del servidor, panel de
   filtros por categoría, búsqueda por título o autor e interruptor de
-  inventario bajo con umbral configurable.
+  inventario bajo con umbral configurable. Usa los tres endpoints de lectura:
+  `/books/search` cuando sólo se filtra por categoría, `/books/low-stock`
+  cuando sólo se filtra por inventario bajo, y `/books` para el resto de
+  combinaciones.
 - **Gestión de libros**: formularios validados en cliente (ISBN de 10 o 13
   dígitos, coste mayor que 0 con 2 decimales, stock entero no negativo) para
   crear y actualizar, y borrado con diálogo de confirmación.
