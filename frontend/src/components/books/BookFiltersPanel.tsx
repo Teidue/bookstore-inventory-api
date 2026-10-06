@@ -1,5 +1,4 @@
 import { Search, X } from 'lucide-react';
-import { LOW_STOCK_THRESHOLD } from '../../config';
 import type { BookFilters } from '../../types/api';
 import { inputStyles } from '../ui/input-styles';
 
@@ -25,8 +24,6 @@ export function BookFiltersPanel({
   onClear,
   hasFilters,
 }: BookFiltersPanelProps) {
-  const onlyLowStock = filters.low_stock_threshold !== '';
-
   return (
     <div
       className="animate-rise mb-4 rounded-xl border border-line bg-surface p-4 shadow-card [animation-delay:180ms]"
@@ -70,53 +67,34 @@ export function BookFiltersPanel({
 
         <div className="min-w-0">
           <label className={LABEL} htmlFor="filter-threshold">
-            Umbral de stock
+            Stock máximo
           </label>
+          {/* Único control del umbral. Vacío significa «sin límite»; las
+              tarjetas de resumen son atajos que rellenan este mismo campo. */}
           <input
             id="filter-threshold"
             className={`${inputStyles()} tabular`}
             type="number"
             min="0"
             step="1"
-            placeholder={String(LOW_STOCK_THRESHOLD)}
+            placeholder="Sin límite"
             value={filters.low_stock_threshold}
             onChange={(event) => onChange({ low_stock_threshold: event.target.value })}
-            disabled={!onlyLowStock}
           />
         </div>
 
-        <div className="flex items-center gap-3 pb-1">
-          <label
-            className="inline-flex cursor-pointer items-center gap-2 text-[13px] font-medium whitespace-nowrap text-ink select-none"
-            htmlFor="filter-low-stock"
+        {/* El botón sólo aparece cuando hay algo que limpiar: un control
+            permanentemente deshabilitado es ruido en una barra estrecha. */}
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="inline-flex h-9.5 items-center gap-1 rounded-md px-1.5 text-[13px] font-medium whitespace-nowrap text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
           >
-            <input
-              id="filter-low-stock"
-              type="checkbox"
-              className="h-3.5 w-3.5 cursor-pointer rounded accent-accent"
-              checked={onlyLowStock}
-              onChange={(event) =>
-                onChange({
-                  low_stock_threshold: event.target.checked ? String(LOW_STOCK_THRESHOLD) : '',
-                })
-              }
-            />
-            Solo stock bajo
-          </label>
-
-          {/* El botón sólo aparece cuando hay algo que limpiar: un control
-              permanentemente deshabilitado es ruido en una barra estrecha. */}
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[13px] font-medium whitespace-nowrap text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
-            >
-              <X size={14} aria-hidden="true" />
-              Limpiar
-            </button>
-          )}
-        </div>
+            <X size={14} aria-hidden="true" />
+            Limpiar
+          </button>
+        )}
       </div>
     </div>
   );
