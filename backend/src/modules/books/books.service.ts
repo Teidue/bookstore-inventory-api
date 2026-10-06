@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -90,7 +91,16 @@ export class BooksService {
     return toBookResponse(await this.findBookOrFail(id));
   }
 
-  /** PUT: el cuerpo sustituye al recurso completo, salvo el precio calculado. */
+  /**
+   * PUT: el cuerpo sustituye al recurso completo, salvo el precio calculado.
+   *
+   * `selling_price_local` nunca se acepta en el cuerpo, pero tampoco se deja
+   * obsoleto: si el coste cambia, el precio guardado corresponde al coste
+   * anterior y es un dato falso, así que vuelve a `null` («sin calcular») hasta
+   * que se calcule de nuevo. Se prefiere esto a recalcularlo aquí porque un PUT
+   * pasaría a depender de un servicio externo. Si el coste no cambia, el precio
+   * se conserva.
+   */
   async update(id: number, dto: UpdateBookDto): Promise<BookResponse> {
     const book = await this.findBookOrFail(id);
 
@@ -98,7 +108,10 @@ export class BooksService {
     book.author = dto.author;
     book.isbn = dto.isbn;
     book.isbnNormalized = normalizeIsbn(dto.isbn);
-    book.costUsd = dto.cost_usd.toFixed(2);
+    const newCost = dto.cost_usd.toFixed(2);
+    // Comparación decimal exacta: `15.9` y `15.90` son el mismo coste.
+    if (!new Decimal(book.costUsd).equals(newCost)) book.sellingPriceLocal = null;
+    book.costUsd = newCost;
     book.stockQuantity = dto.stock_quantity;
     book.category = dto.category;
     book.supplierCountry = dto.supplier_country;

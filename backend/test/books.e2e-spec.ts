@@ -231,6 +231,62 @@ describe('CRUD de libros (e2e)', () => {
   });
 
   describe('PUT /books/:id', () => {
+    /** Deja un precio calculado en el libro, sin pasar por la API de tasas. */
+    const priceIt = async (id: number): Promise<void> => {
+      await context.dataSource.query('UPDATE book SET selling_price_local = 19.03 WHERE id = $1', [
+        id,
+      ]);
+    };
+
+    it('reinicia el precio de venta si cambia el coste, porque ya no corresponde', async () => {
+      const created = await api()
+        .post('/books')
+        .send(validBook({ isbn: uniqueIsbn(410) }))
+        .expect(201);
+      await priceIt(created.body.id);
+
+      const response = await api()
+        .put(`/books/${created.body.id}`)
+        .send(validBook({ isbn: uniqueIsbn(410), cost_usd: 100 }))
+        .expect(200);
+
+      expect(response.body.cost_usd).toBe(100);
+      expect(response.body.selling_price_local).toBeNull();
+      const stored = await api().get(`/books/${created.body.id}`).expect(200);
+      expect(stored.body.selling_price_local).toBeNull();
+    });
+
+    it('conserva el precio de venta si el coste no cambia', async () => {
+      const created = await api()
+        .post('/books')
+        .send(validBook({ isbn: uniqueIsbn(411) }))
+        .expect(201);
+      await priceIt(created.body.id);
+
+      const response = await api()
+        .put(`/books/${created.body.id}`)
+        .send(validBook({ isbn: uniqueIsbn(411), title: 'Otro título', stock_quantity: 3 }))
+        .expect(200);
+
+      expect(response.body.title).toBe('Otro título');
+      expect(response.body.selling_price_local).toBe(19.03);
+    });
+
+    it('trata 15.9 y 15.90 como el mismo coste y conserva el precio', async () => {
+      const created = await api()
+        .post('/books')
+        .send(validBook({ isbn: uniqueIsbn(412), cost_usd: 15.9 }))
+        .expect(201);
+      await priceIt(created.body.id);
+
+      const response = await api()
+        .put(`/books/${created.body.id}`)
+        .send(validBook({ isbn: uniqueIsbn(412), cost_usd: 15.9 }))
+        .expect(200);
+
+      expect(response.body.selling_price_local).toBe(19.03);
+    });
+
     it('sustituye los datos del libro', async () => {
       const created = await api()
         .post('/books')

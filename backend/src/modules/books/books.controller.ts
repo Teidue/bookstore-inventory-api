@@ -72,7 +72,13 @@ export class BooksController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Actualiza por completo un libro existente.' })
+  @ApiOperation({
+    summary: 'Actualiza por completo un libro existente.',
+    description:
+      'Sustituye todos los campos del libro. `selling_price_local` no se acepta en el cuerpo: ' +
+      'si `cost_usd` cambia, el precio ya calculado vuelve a `null` (sin calcular) porque corresponde al coste anterior; ' +
+      'si no cambia, se conserva.',
+  })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBookDto): Promise<BookResponse> {
     return this.booksService.update(id, dto);
   }
