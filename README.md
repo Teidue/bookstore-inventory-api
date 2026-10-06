@@ -303,6 +303,9 @@ curl -X DELETE http://localhost:3000/books/1   # 204 sin cuerpo
 
 `PUT` sustituye el recurso completo, así que el cuerpo debe traer todos los
 campos. No altera `selling_price_local`: ese valor sólo lo escribe el cálculo.
+**Consecuencia a tener en cuenta:** si el `PUT` cambia `cost_usd`, el precio ya
+calculado se conserva y queda desactualizado hasta que se vuelva a calcular
+(véase la sección 10).
 
 ---
 
@@ -738,6 +741,44 @@ los mismos nombres, así que ningún componente sabe en qué tema está.
 **Idioma.** Los identificadores, archivos y códigos de error están en inglés; los
 comentarios y todo el texto que lee el usuario (interfaz y mensajes de la API)
 están en español.
+
+### Comportamientos que conviene conocer
+
+Decisiones de detalle que el enunciado no especifica y que afectan a quien use la
+API. Están aquí para que no sorprendan.
+
+- **Orden del listado.** `GET /books` devuelve primero los más recientes
+  (`created_at` descendente) y desempata por `id` descendente. Sin ese desempate,
+  dos libros creados en el mismo instante podrían intercambiarse entre una página
+  y la siguiente y aparecer repetidos u omitidos.
+- **El borrado es físico.** `DELETE` elimina la fila: no hay papelera ni borrado
+  lógico. Es lo más simple para este alcance y lo que el enunciado describe
+  («Eliminar libro»); un inventario real podría querer conservar el histórico.
+- **El precio calculado se conserva al editar, y puede quedar desactualizado.**
+  `PUT` nunca escribe `selling_price_local`. Si cambia `cost_usd`, el precio
+  guardado corresponde al coste anterior hasta que se pulse «Calcular precio».
+  La API no lo recalcula automáticamente porque eso obligaría a que un `PUT`
+  dependiera de un servicio externo.
+- **El precio se guarda sin moneda.** Cada libro guarda sólo el importe; la moneda
+  es la configurada en `LOCAL_CURRENCY`. Cambiar esa variable no reconvierte los
+  precios ya guardados: se leerían en la moneda nueva. La API admite una única
+  moneda local por instalación.
+- **Los campos desconocidos se ignoran, no dan error.** El cuerpo se filtra con
+  `whitelist`, así que un campo que el DTO no declara (como `selling_price_local`)
+  se descarta en silencio en lugar de responder `400`. Es deliberado: un cliente
+  que envía un campo de más no debería fallar por eso, y el valor no llega nunca
+  al servicio.
+- **Los textos se limpian al entrar.** `title`, `author`, `category` e `isbn` se
+  recortan (sin espacios al principio ni al final) y `supplier_country` se guarda
+  en mayúsculas, de modo que `es` y `ES` son el mismo país.
+- **El ISBN se guarda como se envió.** Se conserva el formato original (con o sin
+  guiones) y además un valor normalizado, que es sobre el que se impone la
+  unicidad y el que se compara.
+- **Límites de los datos.** `cost_usd` admite como máximo 2 decimales y
+  `stock_quantity` debe ser un entero; `limit` en los listados tiene un techo de
+  100.
+- **Los identificadores son enteros autoincrementales.** Son predecibles, lo que
+  es aceptable porque la API no tiene autenticación (véase la deuda técnica).
 
 ### Deuda técnica asumida
 
