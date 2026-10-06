@@ -78,6 +78,56 @@ export function formatIsbnInput(raw: string): string {
   return groups.join('-');
 }
 
+export interface IsbnAdvisory {
+  tone: 'success' | 'warning';
+  text: string;
+}
+
+const isbn13CheckOk = (digits: string): boolean =>
+  [...digits].reduce((sum, char, index) => sum + Number(char) * (index % 2 === 0 ? 1 : 3), 0) % 10 === 0;
+
+const isbn10CheckOk = (chars: string): boolean =>
+  [...chars].reduce((sum, char, index) => sum + (char === 'X' ? 10 : Number(char)) * (10 - index), 0) %
+    11 ===
+  0;
+
+/**
+ * Comentario sobre un ISBN completo: prefijo y dígito de control.
+ *
+ * Es un AVISO y no un error de validación, a propósito. El enunciado pide 10 o
+ * 13 dígitos, así que la API acepta cualquier número con esa forma y rechazar
+ * aquí lo que ella admite sería inventarse un requisito. El dígito de control
+ * sirve para pillar erratas de tecleo, y para eso basta con avisar.
+ *
+ * Qué significa cada grupo (país, editorial) no se comprueba: exigiría la tabla
+ * oficial de rangos de la agencia ISBN, que se actualiza, y con una copia
+ * desfasada se marcarían como erróneos libros reales.
+ *
+ * `settled` indica que el usuario ya salió del campo. Con 10 caracteres no se
+ * sabe si es un ISBN-10 terminado o los diez primeros dígitos de uno de 13, así
+ * que sólo se evalúa si acaba en X o cuando ya no se está escribiendo.
+ */
+export function isbnAdvisory(isbn: string, settled: boolean): IsbnAdvisory | null {
+  const chars = isbn.replace(/-/g, '');
+
+  if (chars.length === 13) {
+    if (!/^97[89]/.test(chars)) {
+      return { tone: 'warning', text: 'Un ISBN-13 empieza por 978 o 979. Revisa el número.' };
+    }
+    return isbn13CheckOk(chars)
+      ? { tone: 'success', text: 'ISBN válido.' }
+      : { tone: 'warning', text: 'El dígito de control no coincide: puede haber un error de tecleo. Puedes guardarlo igualmente.' };
+  }
+
+  if (chars.length === 10 && (chars.endsWith('X') || settled)) {
+    return isbn10CheckOk(chars)
+      ? { tone: 'success', text: 'ISBN válido.' }
+      : { tone: 'warning', text: 'El dígito de control no coincide: puede haber un error de tecleo. Puedes guardarlo igualmente.' };
+  }
+
+  return null;
+}
+
 /** Cuántos caracteres significativos hay antes de `position`; guía al cursor. */
 export function countIsbnChars(text: string, position: number): number {
   return text.slice(0, position).replace(/[^0-9Xx]/g, '').length;

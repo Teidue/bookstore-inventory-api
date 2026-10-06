@@ -279,11 +279,15 @@ también como restricción en la base:
 5. Si la API de tasas falla, se usa la tasa de respaldo configurada; si no hay
    ninguna, la API responde `503` en lugar de inventar un precio.
 
-> **Por qué no se valida el dígito de control del ISBN.** El estándar EAN-13
-> define un dígito de control, pero el ISBN de ejemplo del enunciado
-> (`978-84-376-0494-7`) **no lo cumple**. Validarlo rechazaría los propios datos
-> de prueba del documento, así que se implementa el requisito tal y como está
-> escrito: 10 o 13 dígitos.
+> **Qué se valida del ISBN, y qué no.** La API acepta cualquier número de 10 o
+> 13 dígitos (los guiones se ignoran), que es lo que pide el enunciado: rechazar
+> lo que el contrato admite rompería a los clientes que lo cumplen, y esto
+> incluye a quien pruebe con un ISBN inventado de 13 cifras. El formulario sí
+> comprueba el prefijo (978/979) y el dígito de control, pero como **aviso no
+> bloqueante**: sirve para detectar erratas de tecleo, no para impedir guardar.
+> Qué significa cada grupo del ISBN (país, editorial) no se comprueba: exigiría
+> la tabla oficial de rangos de la agencia ISBN, que se actualiza y daría falsos
+> errores con una copia desfasada.
 
 ### Códigos de error
 

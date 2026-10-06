@@ -8,6 +8,7 @@ import {
   caretAfterIsbnChars,
   countIsbnChars,
   formatIsbnInput,
+  isbnAdvisory,
   validateBookForm,
   type BookFormValues,
   type FormErrors,
@@ -56,6 +57,7 @@ export function BookForm({
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
+  const [isbnSettled, setIsbnSettled] = useState(false);
 
   // Al reformatear el ISBN, React recoloca el cursor al final. Se recuerda
   // cuántos caracteres había antes del cursor para devolverlo a su sitio, y así
@@ -69,6 +71,8 @@ export function BookForm({
     isbnRef.current.setSelectionRange(position, position);
     isbnCaret.current = null;
   }, [values.isbn]);
+
+  const isbnNote = isbnAdvisory(values.isbn, isbnSettled);
 
   const updateIsbn = (event: ChangeEvent<HTMLInputElement>) => {
     const { value, selectionStart } = event.target;
@@ -126,6 +130,7 @@ export function BookForm({
               id="isbn"
               label="ISBN"
               error={errors.isbn}
+              note={isbnNote}
               hint="10 o 13 dígitos. Los guiones se añaden solos."
             >
               <div className="relative">
@@ -142,8 +147,12 @@ export function BookForm({
                   autoComplete="off"
                   value={values.isbn}
                   onChange={updateIsbn}
+                  // «Asentado» sólo mientras el campo no tiene el foco: al volver a
+                  // escribir deja de opinar sobre un número que puede estar a medias.
+                  onFocus={() => setIsbnSettled(false)}
+                  onBlur={() => setIsbnSettled(true)}
                   aria-invalid={Boolean(errors.isbn)}
-                  aria-describedby={errors.isbn ? 'isbn-error' : 'isbn-hint'}
+                  aria-describedby={errors.isbn ? 'isbn-error' : isbnNote ? 'isbn-note' : 'isbn-hint'}
                 />
               </div>
             </Field>
