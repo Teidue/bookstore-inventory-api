@@ -27,44 +27,47 @@ function normalizeIsbn(isbn: string): string {
   return isbn.replace(/[\s-]/g, '').toUpperCase();
 }
 
-/** Prefijos que identifican un ISBN-13 (los de «Bookland»). */
-const ISBN13_PREFIXES = ['978', '979'];
+/** Reparto fijo de los guiones, sea cual sea el ISBN que se escriba. */
+const ISBN_GROUPS = [3, 2, 3, 4, 1];
 
-const isIsbn13 = (digits: string[]): boolean =>
-  digits.length < 3 || ISBN13_PREFIXES.includes(digits.slice(0, 3).join(''));
+/** Un ISBN-13 tiene 13 dígitos; el ISBN-10 es un prefijo suyo de 10 con una X posible. */
+const ISBN_MAX_LENGTH = 13;
+const ISBN10_LENGTH = 10;
 
 /**
  * Máscara de entrada del ISBN.
  *
- * Deja pasar sólo dígitos (y una `X` como último carácter de un ISBN-10), corta
- * en 10 o 13 según el prefijo y reparte guiones al escribir. Funciona igual al
- * teclear que al pegar, y cuando se pega un ISBN con guiones o espacios, los
- * reconstruye sin duplicarlos.
+ * Deja pasar sólo dígitos, corta en 13 y reparte los guiones al escribir o
+ * pegar, también cuando lo pegado trae guiones o espacios de otro formato.
+ * La `X` se admite únicamente como décimo carácter, que es donde la lleva un
+ * ISBN-10 como dígito de control, y cierra la entrada.
  *
- * Los guiones son de agrupación visual, con el reparto habitual de los libros
- * en español: el tamaño real de cada grupo depende del país y de la editorial
- * y exigiría una tabla oficial de rangos. Lo que cuenta son los dígitos; el
- * backend ignora los guiones al comparar.
+ * El reparto es SIEMPRE el mismo. Una versión anterior lo elegía según el
+ * primer dígito (978/979 o no), y el resultado era que el mismo campo agrupaba
+ * a veces de 3 en 3 y a veces de 2 en 2, y que un ISBN-13 que no empezara por
+ * 978 no se podía ni escribir, aunque el backend lo acepta. Los guiones son de
+ * agrupación visual: el tamaño real de cada grupo depende del país y de la
+ * editorial y exigiría una tabla oficial de rangos. Lo que cuenta son los
+ * dígitos, y el backend ignora los guiones al comparar.
  */
 export function formatIsbnInput(raw: string): string {
   const kept: string[] = [];
 
   for (const char of raw.toUpperCase()) {
-    const max = isIsbn13(kept) ? 13 : 10;
+    // La X es el último carácter posible: tras ella no cabe nada más.
+    if (kept[kept.length - 1] === 'X') break;
 
     if (/\d/.test(char)) {
-      if (kept.length < max) kept.push(char);
-    } else if (char === 'X' && kept.length === 9 && !isIsbn13(kept)) {
-      // La X es el dígito de control de un ISBN-10 y sólo cabe al final.
+      if (kept.length < ISBN_MAX_LENGTH) kept.push(char);
+    } else if (char === 'X' && kept.length === ISBN10_LENGTH - 1) {
       kept.push(char);
     }
   }
 
-  const sizes = isIsbn13(kept) ? [3, 2, 3, 4, 1] : [2, 3, 4, 1];
   const groups: string[] = [];
   let start = 0;
 
-  for (const size of sizes) {
+  for (const size of ISBN_GROUPS) {
     if (start >= kept.length) break;
     groups.push(kept.slice(start, start + size).join(''));
     start += size;
