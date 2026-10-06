@@ -6,7 +6,7 @@ sugerido a partir de la tasa de cambio del día.
 | Capa | Tecnología |
 |---|---|
 | Backend | NestJS 11 · TypeScript · TypeORM · PostgreSQL |
-| Frontend | React 19 · TypeScript · Vite · React Router |
+| Frontend | React 19 · TypeScript · Vite · React Router · Tailwind CSS 4 |
 | Integración | [exchangerate-api.com](https://api.exchangerate-api.com/v4/latest/USD) |
 | Entorno | Docker Compose · Node 22 |
 

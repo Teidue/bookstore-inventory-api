@@ -1,7 +1,7 @@
 /**
  * Contrato de la API, declarado a mano y en snake_case porque así lo fija el
- * enunciado.  No hay `any` en ninguna respuesta: si el backend cambia una
- * forma, lo señala el compilador en lugar de romperse en tiempo de ejecución.
+ * enunciado. No hay `any` en ninguna respuesta: si el backend cambia una
+ * forma, lo señala el compilador.
  */
 
 export interface Book {
@@ -18,22 +18,22 @@ export interface Book {
   updated_at: string;
 }
 
-export interface MetadatosPaginacion {
+export interface PaginationMeta {
   total: number;
   page: number;
   limit: number;
   total_pages: number;
 }
 
-export interface RespuestaPaginada<T> {
+export interface PaginatedResponse<T> {
   data: T[];
-  meta: MetadatosPaginacion;
+  meta: PaginationMeta;
 }
 
 /** De dónde salió la tasa usada en un cálculo. */
-export type OrigenTasa = 'exchange_api' | 'cache' | 'fallback';
+export type RateSource = 'exchange_api' | 'cache' | 'fallback';
 
-export interface CalculoPrecio {
+export interface PriceCalculation {
   book_id: number;
   cost_usd: number;
   exchange_rate: number;
@@ -42,11 +42,11 @@ export interface CalculoPrecio {
   selling_price_local: number;
   currency: string;
   calculation_timestamp: string;
-  rate_source: OrigenTasa;
+  rate_source: RateSource;
 }
 
 /** Cuerpo de error que devuelve el filtro global de la API. */
-export interface ErrorApi {
+export interface ApiError {
   statusCode: number;
   code: string;
   message: string;
@@ -56,7 +56,7 @@ export interface ErrorApi {
 }
 
 /** Cuerpo que acepta la API al crear o actualizar un libro. */
-export interface LibroPayload {
+export interface BookPayload {
   title: string;
   author: string;
   isbn: string;
@@ -66,7 +66,7 @@ export interface LibroPayload {
   supplier_country: string;
 }
 
-export interface FiltrosLibros {
+export interface BookFilters {
   page: number;
   limit: number;
   category: string;

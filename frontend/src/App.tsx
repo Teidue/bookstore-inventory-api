@@ -1,20 +1,20 @@
 import { Route, Routes } from 'react-router-dom';
-import { Disposicion } from './components/layout/Disposicion';
+import { Layout } from './components/layout/Layout';
+import { BookDetail } from './pages/BookDetail';
 import { Dashboard } from './pages/Dashboard';
-import { DetalleLibro } from './pages/DetalleLibro';
-import { EditarLibro } from './pages/EditarLibro';
-import { NoEncontrada } from './pages/NoEncontrada';
-import { NuevoLibro } from './pages/NuevoLibro';
+import { EditBook } from './pages/EditBook';
+import { NewBook } from './pages/NewBook';
+import { NotFound } from './pages/NotFound';
 
 export function App() {
   return (
     <Routes>
-      <Route element={<Disposicion />}>
+      <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/books/new" element={<NuevoLibro />} />
-        <Route path="/books/:id" element={<DetalleLibro />} />
-        <Route path="/books/:id/edit" element={<EditarLibro />} />
-        <Route path="*" element={<NoEncontrada />} />
+        <Route path="/books/new" element={<NewBook />} />
+        <Route path="/books/:id" element={<BookDetail />} />
+        <Route path="/books/:id/edit" element={<EditBook />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

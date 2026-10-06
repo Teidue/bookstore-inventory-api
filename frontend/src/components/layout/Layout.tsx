@@ -1,12 +1,12 @@
 import { Outlet } from 'react-router-dom';
-import { BarraNavegacion } from './BarraNavegacion';
+import { NavBar } from './NavBar';
 
 /** Marco común de todas las pantallas. */
-export function Disposicion() {
+export function Layout() {
   return (
     <>
-      <BarraNavegacion />
-      <main className="contenido">
+      <NavBar />
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <Outlet />
       </main>
     </>

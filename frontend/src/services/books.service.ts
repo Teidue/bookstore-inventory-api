@@ -1,11 +1,11 @@
 import type {
   Book,
-  CalculoPrecio,
-  FiltrosLibros,
-  LibroPayload,
-  RespuestaPaginada,
+  BookFilters,
+  BookPayload,
+  PaginatedResponse,
+  PriceCalculation,
 } from '../types/api';
-import { peticion } from './clienteApi';
+import { request } from './apiClient';
 
 /**
  * Elige el endpoint que mejor describe la consulta.
@@ -15,55 +15,56 @@ import { peticion } from './clienteApi';
  * endpoint específico; para cualquier combinación, al listado general, que
  * admite los mismos filtros. Las tres devuelven la misma envoltura paginada.
  */
-function rutaDeListado(filtros: FiltrosLibros): { ruta: string; parametros: Record<string, string | number | undefined> } {
-  const comunes = { page: filtros.page, limit: filtros.limit };
-  const soloStockBajo =
-    filtros.low_stock_threshold !== '' && filtros.category === '' && filtros.search === '';
-  const soloCategoria =
-    filtros.category !== '' && filtros.low_stock_threshold === '' && filtros.search === '';
+function listRoute(filters: BookFilters): {
+  path: string;
+  params: Record<string, string | number | undefined>;
+} {
+  const common = { page: filters.page, limit: filters.limit };
+  const onlyLowStock =
+    filters.low_stock_threshold !== '' && filters.category === '' && filters.search === '';
+  const onlyCategory =
+    filters.category !== '' && filters.low_stock_threshold === '' && filters.search === '';
 
-  if (soloStockBajo) {
-    return { ruta: '/books/low-stock', parametros: { ...comunes, threshold: filtros.low_stock_threshold } };
+  if (onlyLowStock) {
+    return { path: '/books/low-stock', params: { ...common, threshold: filters.low_stock_threshold } };
   }
 
-  if (soloCategoria) {
-    return { ruta: '/books/search', parametros: { ...comunes, category: filtros.category } };
+  if (onlyCategory) {
+    return { path: '/books/search', params: { ...common, category: filters.category } };
   }
 
   return {
-    ruta: '/books',
-    parametros: {
-      ...comunes,
-      category: filtros.category,
-      search: filtros.search,
-      low_stock_threshold: filtros.low_stock_threshold,
+    path: '/books',
+    params: {
+      ...common,
+      category: filters.category,
+      search: filters.search,
+      low_stock_threshold: filters.low_stock_threshold,
     },
   };
 }
 
-export const booksServicio = {
+export const booksService = {
   /**
-   * Listado paginado.  Los filtros viajan como parámetros y los aplica
+   * Listado paginado. Los filtros viajan como parámetros y los aplica
    * PostgreSQL: el cliente nunca recibe el catálogo entero para recortarlo.
    */
-  listar: (filtros: FiltrosLibros, señal?: AbortSignal): Promise<RespuestaPaginada<Book>> => {
-    const { ruta, parametros } = rutaDeListado(filtros);
-    return peticion<RespuestaPaginada<Book>>(ruta, { parametros, señal });
+  list: (filters: BookFilters, signal?: AbortSignal): Promise<PaginatedResponse<Book>> => {
+    const { path, params } = listRoute(filters);
+    return request<PaginatedResponse<Book>>(path, { params, signal });
   },
 
-  obtener: (id: number, señal?: AbortSignal): Promise<Book> =>
-    peticion<Book>(`/books/${id}`, { señal }),
+  get: (id: number, signal?: AbortSignal): Promise<Book> => request<Book>(`/books/${id}`, { signal }),
 
-  crear: (datos: LibroPayload): Promise<Book> =>
-    peticion<Book>('/books', { metodo: 'POST', cuerpo: datos }),
+  create: (data: BookPayload): Promise<Book> =>
+    request<Book>('/books', { method: 'POST', body: data }),
 
-  actualizar: (id: number, datos: LibroPayload): Promise<Book> =>
-    peticion<Book>(`/books/${id}`, { metodo: 'PUT', cuerpo: datos }),
+  update: (id: number, data: BookPayload): Promise<Book> =>
+    request<Book>(`/books/${id}`, { method: 'PUT', body: data }),
 
-  eliminar: (id: number): Promise<void> =>
-    peticion<void>(`/books/${id}`, { metodo: 'DELETE' }),
+  remove: (id: number): Promise<void> => request<void>(`/books/${id}`, { method: 'DELETE' }),
 
   /** Dispara la integración externa y devuelve el desglose del cálculo. */
-  calcularPrecio: (id: number): Promise<CalculoPrecio> =>
-    peticion<CalculoPrecio>(`/books/${id}/calculate-price`, { metodo: 'POST' }),
+  calculatePrice: (id: number): Promise<PriceCalculation> =>
+    request<PriceCalculation>(`/books/${id}/calculate-price`, { method: 'POST' }),
 };
