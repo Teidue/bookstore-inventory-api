@@ -374,6 +374,47 @@
               }
             }
           ]
+        },
+        {
+          "name": "Editar el coste reinicia el precio de venta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responde 200', () => pm.response.to.have.status(200));",
+                  "const book = pm.response.json();",
+                  "pm.test('el coste nuevo se guarda', () => pm.expect(book.cost_usd).to.eql(20));",
+                  "pm.test('el precio calculado vuelve a null: correspondía al coste anterior', () => pm.expect(book.selling_price_local).to.be.null);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books/{{book_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "{{book_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"El Quijote\",\n  \"author\": \"Miguel de Cervantes\",\n  \"isbn\": \"{{isbn}}\",\n  \"cost_usd\": 20,\n  \"stock_quantity\": 5,\n  \"category\": \"Literatura Clásica\",\n  \"supplier_country\": \"ES\"\n}"
+            },
+            "description": "Si el PUT cambia `cost_usd`, el precio de venta ya calculado deja de ser válido y vuelve a `null` hasta que se calcule de nuevo. Si el coste no cambia, el precio se conserva."
+          }
         }
       ]
     },
