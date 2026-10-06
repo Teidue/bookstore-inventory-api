@@ -21,7 +21,7 @@ function required(clave: string): string {
 }
 
 /**
- * `npm run db:crear`: deja lista la base de datos vacía antes de migrar.
+ * `npm run db:create`: deja lista la base de datos vacía antes de migrar.
  *
  * Existe para que todo el ciclo —crear, migrar y sembrar— se haga con
  * comandos npm, sin ningún .sql que haya que ejecutar a mano.  Es idempotente:
