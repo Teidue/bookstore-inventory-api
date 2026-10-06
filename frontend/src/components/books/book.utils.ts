@@ -27,6 +27,72 @@ function normalizeIsbn(isbn: string): string {
   return isbn.replace(/[\s-]/g, '').toUpperCase();
 }
 
+/** Prefijos que identifican un ISBN-13 (los de «Bookland»). */
+const ISBN13_PREFIXES = ['978', '979'];
+
+const isIsbn13 = (digits: string[]): boolean =>
+  digits.length < 3 || ISBN13_PREFIXES.includes(digits.slice(0, 3).join(''));
+
+/**
+ * Máscara de entrada del ISBN.
+ *
+ * Deja pasar sólo dígitos (y una `X` como último carácter de un ISBN-10), corta
+ * en 10 o 13 según el prefijo y reparte guiones al escribir. Funciona igual al
+ * teclear que al pegar, y cuando se pega un ISBN con guiones o espacios, los
+ * reconstruye sin duplicarlos.
+ *
+ * Los guiones son de agrupación visual, con el reparto habitual de los libros
+ * en español: el tamaño real de cada grupo depende del país y de la editorial
+ * y exigiría una tabla oficial de rangos. Lo que cuenta son los dígitos; el
+ * backend ignora los guiones al comparar.
+ */
+export function formatIsbnInput(raw: string): string {
+  const kept: string[] = [];
+
+  for (const char of raw.toUpperCase()) {
+    const max = isIsbn13(kept) ? 13 : 10;
+
+    if (/\d/.test(char)) {
+      if (kept.length < max) kept.push(char);
+    } else if (char === 'X' && kept.length === 9 && !isIsbn13(kept)) {
+      // La X es el dígito de control de un ISBN-10 y sólo cabe al final.
+      kept.push(char);
+    }
+  }
+
+  const sizes = isIsbn13(kept) ? [3, 2, 3, 4, 1] : [2, 3, 4, 1];
+  const groups: string[] = [];
+  let start = 0;
+
+  for (const size of sizes) {
+    if (start >= kept.length) break;
+    groups.push(kept.slice(start, start + size).join(''));
+    start += size;
+  }
+
+  // Los guiones sólo aparecen entre grupos con contenido: al borrar hacia
+  // atrás nunca queda un guion colgando que obligue a borrar dos veces.
+  return groups.join('-');
+}
+
+/** Cuántos caracteres significativos hay antes de `position`; guía al cursor. */
+export function countIsbnChars(text: string, position: number): number {
+  return text.slice(0, position).replace(/[^0-9Xx]/g, '').length;
+}
+
+/** Posición del cursor tras `count` caracteres significativos en `formatted`. */
+export function caretAfterIsbnChars(formatted: string, count: number): number {
+  if (count === 0) return 0;
+
+  let seen = 0;
+  for (let index = 0; index < formatted.length; index += 1) {
+    if (formatted[index] !== '-') seen += 1;
+    if (seen === count) return index + 1;
+  }
+
+  return formatted.length;
+}
+
 /**
  * Validación de cliente.
  *
@@ -84,7 +150,7 @@ export function toFormValues(book: Book): BookFormValues {
   return {
     title: book.title,
     author: book.author,
-    isbn: book.isbn,
+    isbn: formatIsbnInput(book.isbn),
     cost_usd: book.cost_usd.toFixed(2),
     stock_quantity: String(book.stock_quantity),
     category: book.category,

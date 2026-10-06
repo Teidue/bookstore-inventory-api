@@ -1,10 +1,17 @@
 import { BookOpen, Loader2, Save } from 'lucide-react';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Field } from '../ui/Field';
 import { inputStyles } from '../ui/input-styles';
-import { validateBookForm, type BookFormValues, type FormErrors } from './book.utils';
+import {
+  caretAfterIsbnChars,
+  countIsbnChars,
+  formatIsbnInput,
+  validateBookForm,
+  type BookFormValues,
+  type FormErrors,
+} from './book.utils';
 
 interface BookFormProps {
   initialValues: BookFormValues;
@@ -49,6 +56,25 @@ export function BookForm({
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
+
+  // Al reformatear el ISBN, React recoloca el cursor al final. Se recuerda
+  // cuántos caracteres había antes del cursor para devolverlo a su sitio, y así
+  // corregir un dígito en mitad del número no obliga a volver a clicar.
+  const isbnRef = useRef<HTMLInputElement>(null);
+  const isbnCaret = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (isbnCaret.current === null || !isbnRef.current) return;
+    const position = caretAfterIsbnChars(values.isbn, isbnCaret.current);
+    isbnRef.current.setSelectionRange(position, position);
+    isbnCaret.current = null;
+  }, [values.isbn]);
+
+  const updateIsbn = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value, selectionStart } = event.target;
+    isbnCaret.current = countIsbnChars(value, selectionStart ?? value.length);
+    update('isbn', formatIsbnInput(value));
+  };
 
   const update = (field: keyof BookFormValues, value: string) => {
     const next = { ...values, [field]: value };
@@ -100,7 +126,7 @@ export function BookForm({
               id="isbn"
               label="ISBN"
               error={errors.isbn}
-              hint="10 o 13 dígitos. Los guiones se admiten."
+              hint="10 o 13 dígitos. Los guiones se añaden solos."
             >
               <div className="relative">
                 <BookOpen
@@ -110,10 +136,12 @@ export function BookForm({
                 />
                 <input
                   id="isbn"
+                  ref={isbnRef}
                   className={`${inputStyles(Boolean(errors.isbn))} tabular pl-9`}
                   placeholder="978-84-376-0494-7"
+                  autoComplete="off"
                   value={values.isbn}
-                  onChange={(event) => update('isbn', event.target.value)}
+                  onChange={updateIsbn}
                   aria-invalid={Boolean(errors.isbn)}
                   aria-describedby={errors.isbn ? 'isbn-error' : 'isbn-hint'}
                 />
