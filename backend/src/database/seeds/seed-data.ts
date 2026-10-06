@@ -56,7 +56,7 @@ export const BOOKS: readonly BookSeed[] = [
   {
     title: 'Pedro Páramo',
     author: 'Juan Rulfo',
-    isbn: '978-607-16-1234-5',
+    isbn: '978-607-16-1234-2',
     cost_usd: '12.80',
     stock_quantity: 40,
     category: 'Literatura Clásica',
@@ -101,7 +101,7 @@ export const BOOKS: readonly BookSeed[] = [
   {
     title: 'El infinito en un junco',
     author: 'Irene Vallejo',
-    isbn: '978-84-17860-79-9',
+    isbn: '978-84-17860-79-0',
     cost_usd: '26.10',
     stock_quantity: 18,
     category: 'Ensayo',
@@ -119,7 +119,7 @@ export const BOOKS: readonly BookSeed[] = [
   {
     title: 'Donde viven los monstruos',
     author: 'Maurice Sendak',
-    isbn: '978-84-261-2654-0',
+    isbn: '978-84-261-2654-2',
     cost_usd: '14.50',
     stock_quantity: 8,
     category: 'Infantil',
@@ -137,7 +137,7 @@ export const BOOKS: readonly BookSeed[] = [
   {
     title: 'Los detectives salvajes',
     author: 'Roberto Bolaño',
-    isbn: '978-84-339-6868-1',
+    isbn: '978-84-339-6868-5',
     cost_usd: '19.90',
     stock_quantity: 6,
     category: 'Novela',
