@@ -8,18 +8,18 @@ import {
 } from './utils/test-application';
 
 describe('CRUD de libros (e2e)', () => {
-  let contexto: TestApplication;
+  let context: TestApplication;
   let app: INestApplication;
 
   const api = () => request(app.getHttpServer());
 
   beforeAll(async () => {
-    contexto = await createTestApplication();
-    app = contexto.app;
+    context = await createTestApplication();
+    app = context.app;
   });
 
   afterAll(async () => {
-    await contexto.close();
+    await context.close();
   });
 
   describe('POST /books', () => {
@@ -39,7 +39,7 @@ describe('CRUD de libros (e2e)', () => {
       expect(typeof response.body.id).toBe('number');
       expect(new Date(response.body.created_at).toString()).not.toBe('Invalid Date');
       // La columna interna de unicidad no forma parte del contrato público.
-      expect(response.body).not.toHaveProperty('isbn_normalizado');
+      expect(response.body).not.toHaveProperty('isbn_normalized');
     });
 
     it('nace sin precio de venta aunque lo intenten enviar en el body', async () => {
@@ -102,16 +102,16 @@ describe('CRUD de libros (e2e)', () => {
     beforeAll(async () => {
       // Catálogo suficiente para que la paginación y los filtros tengan algo
       // que repartir.
-      for (let indice = 0; indice < 12; indice += 1) {
+      for (let index = 0; index < 12; index += 1) {
         await api()
           .post('/books')
           .send(
             validBook({
-              title: `Libro de prueba ${indice}`,
-              author: indice % 2 === 0 ? 'Autora Par' : 'Autor Impar',
-              isbn: uniqueIsbn(100 + indice),
-              category: indice % 3 === 0 ? 'Técnico' : 'Novela',
-              stock_quantity: indice,
+              title: `Libro de prueba ${index}`,
+              author: index % 2 === 0 ? 'Autora Par' : 'Autor Impar',
+              isbn: uniqueIsbn(100 + index),
+              category: index % 3 === 0 ? 'Técnico' : 'Novela',
+              stock_quantity: index,
             }),
           )
           .expect(201);
@@ -119,17 +119,17 @@ describe('CRUD de libros (e2e)', () => {
     });
 
     it('pagina con metadatos calculados en la base de datos', async () => {
-      const pagina1 = await api().get('/books?page=1&limit=5').expect(200);
+      const firstPage = await api().get('/books?page=1&limit=5').expect(200);
 
-      expect(pagina1.body.data).toHaveLength(5);
-      expect(pagina1.body.meta.page).toBe(1);
-      expect(pagina1.body.meta.limit).toBe(5);
-      expect(pagina1.body.meta.total).toBeGreaterThanOrEqual(12);
-      expect(pagina1.body.meta.total_pages).toBe(Math.ceil(pagina1.body.meta.total / 5));
+      expect(firstPage.body.data).toHaveLength(5);
+      expect(firstPage.body.meta.page).toBe(1);
+      expect(firstPage.body.meta.limit).toBe(5);
+      expect(firstPage.body.meta.total).toBeGreaterThanOrEqual(12);
+      expect(firstPage.body.meta.total_pages).toBe(Math.ceil(firstPage.body.meta.total / 5));
 
-      const pagina2 = await api().get('/books?page=2&limit=5').expect(200);
-      const ids1 = (pagina1.body.data as { id: number }[]).map((l) => l.id);
-      const ids2 = (pagina2.body.data as { id: number }[]).map((l) => l.id);
+      const secondPage = await api().get('/books?page=2&limit=5').expect(200);
+      const ids1 = (firstPage.body.data as { id: number }[]).map((l) => l.id);
+      const ids2 = (secondPage.body.data as { id: number }[]).map((l) => l.id);
 
       expect(ids1.some((id) => ids2.includes(id))).toBe(false);
     });
@@ -142,17 +142,17 @@ describe('CRUD de libros (e2e)', () => {
     it('filtra por categoría sin distinguir mayúsculas', async () => {
       const response = await api().get('/books?category=técnico&limit=100').expect(200);
 
-      const categorias = (response.body.data as { category: string }[]).map((l) => l.category);
-      expect(categorias.length).toBeGreaterThan(0);
-      expect(categorias.every((c) => c === 'Técnico')).toBe(true);
+      const categories = (response.body.data as { category: string }[]).map((l) => l.category);
+      expect(categories.length).toBeGreaterThan(0);
+      expect(categories.every((c) => c === 'Técnico')).toBe(true);
     });
 
     it('busca por título o autor', async () => {
       const response = await api().get('/books?search=Autora Par&limit=100').expect(200);
 
-      const autores = (response.body.data as { author: string }[]).map((l) => l.author);
-      expect(autores.length).toBeGreaterThan(0);
-      expect(autores.every((a) => a === 'Autora Par')).toBe(true);
+      const authors = (response.body.data as { author: string }[]).map((l) => l.author);
+      expect(authors.length).toBeGreaterThan(0);
+      expect(authors.every((a) => a === 'Autora Par')).toBe(true);
     });
   });
 
@@ -160,9 +160,9 @@ describe('CRUD de libros (e2e)', () => {
     it('search?category= devuelve sólo esa categoría', async () => {
       const response = await api().get('/books/search?category=Novela&limit=100').expect(200);
 
-      const categorias = (response.body.data as { category: string }[]).map((l) => l.category);
-      expect(categorias.length).toBeGreaterThan(0);
-      expect(categorias.every((c) => c === 'Novela')).toBe(true);
+      const categories = (response.body.data as { category: string }[]).map((l) => l.category);
+      expect(categories.length).toBeGreaterThan(0);
+      expect(categories.every((c) => c === 'Novela')).toBe(true);
     });
 
     it('low-stock usa 10 como umbral por defecto', async () => {
@@ -190,13 +190,13 @@ describe('CRUD de libros (e2e)', () => {
 
   describe('GET /books/:id', () => {
     it('devuelve el libro pedido', async () => {
-      const creado = await api()
+      const created = await api()
         .post('/books')
         .send(validBook({ isbn: uniqueIsbn(300) }))
         .expect(201);
 
-      const response = await api().get(`/books/${creado.body.id}`).expect(200);
-      expect(response.body.id).toBe(creado.body.id);
+      const response = await api().get(`/books/${created.body.id}`).expect(200);
+      expect(response.body.id).toBe(created.body.id);
     });
 
     it('responde 404 con código identificable si no existe', async () => {
@@ -211,13 +211,13 @@ describe('CRUD de libros (e2e)', () => {
 
   describe('PUT /books/:id', () => {
     it('sustituye los datos del libro', async () => {
-      const creado = await api()
+      const created = await api()
         .post('/books')
         .send(validBook({ isbn: uniqueIsbn(400) }))
         .expect(201);
 
       const response = await api()
-        .put(`/books/${creado.body.id}`)
+        .put(`/books/${created.body.id}`)
         .send(
           validBook({
             isbn: uniqueIsbn(400),
@@ -229,7 +229,7 @@ describe('CRUD de libros (e2e)', () => {
         .expect(200);
 
       expect(response.body).toMatchObject({
-        id: creado.body.id,
+        id: created.body.id,
         title: 'Título corregido',
         stock_quantity: 99,
         cost_usd: 30.5,
@@ -244,7 +244,7 @@ describe('CRUD de libros (e2e)', () => {
     });
 
     it('rechaza dejar dos libros con el mismo ISBN -> 409', async () => {
-      const primero = await api()
+      const first = await api()
         .post('/books')
         .send(validBook({ isbn: uniqueIsbn(500) }))
         .expect(201);
@@ -254,7 +254,7 @@ describe('CRUD de libros (e2e)', () => {
         .expect(201);
 
       const response = await api()
-        .put(`/books/${primero.body.id}`)
+        .put(`/books/${first.body.id}`)
         .send(validBook({ isbn: uniqueIsbn(501) }))
         .expect(409);
 
@@ -264,14 +264,14 @@ describe('CRUD de libros (e2e)', () => {
 
   describe('DELETE /books/:id', () => {
     it('elimina el libro y deja de encontrarse', async () => {
-      const creado = await api()
+      const created = await api()
         .post('/books')
         .send(validBook({ isbn: uniqueIsbn(600) }))
         .expect(201);
 
-      await api().delete(`/books/${creado.body.id}`).expect(204);
-      await api().get(`/books/${creado.body.id}`).expect(404);
-      await api().delete(`/books/${creado.body.id}`).expect(404);
+      await api().delete(`/books/${created.body.id}`).expect(204);
+      await api().get(`/books/${created.body.id}`).expect(404);
+      await api().delete(`/books/${created.body.id}`).expect(404);
     });
   });
 });

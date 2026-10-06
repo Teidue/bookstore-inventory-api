@@ -52,17 +52,17 @@ export class ExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const cuerpo = this.buildBody(exception, request.url);
+    const body = this.buildBody(exception, request.url);
 
-    if (cuerpo.statusCode >= FIRST_SERVER_ERROR) {
+    if (body.statusCode >= FIRST_SERVER_ERROR) {
       // Sólo los 5xx se registran con traza: son bugs nuestros, no del cliente.
       this.logger.error(
-        `${request.method} ${request.url} -> ${cuerpo.statusCode}`,
+        `${request.method} ${request.url} -> ${body.statusCode}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
 
-    response.status(cuerpo.statusCode).json(cuerpo);
+    response.status(body.statusCode).json(body);
   }
 
   private buildBody(exception: unknown, path: string): ErrorBody {

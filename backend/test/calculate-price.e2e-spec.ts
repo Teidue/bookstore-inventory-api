@@ -8,8 +8,8 @@ import {
   validBook,
 } from './utils/test-application';
 
-const HOST_TASAS = 'https://api.exchangerate-api.com';
-const RUTA_TASAS = '/v4/latest/USD';
+const RATES_HOST = 'https://api.exchangerate-api.com';
+const RATES_PATH = '/v4/latest/USD';
 
 describe('POST /books/:id/calculate-price (e2e)', () => {
   beforeAll(() => {
@@ -25,22 +25,22 @@ describe('POST /books/:id/calculate-price (e2e)', () => {
   });
 
   describe('con la API de tasas disponible', () => {
-    let contexto: TestApplication;
+    let context: TestApplication;
     let app: INestApplication;
     const api = () => request(app.getHttpServer());
 
     beforeAll(async () => {
-      contexto = await createTestApplication({ fallbackRate: 0.92 });
-      app = contexto.app;
+      context = await createTestApplication({ fallbackRate: 0.92 });
+      app = context.app;
     });
 
     afterAll(async () => {
-      await contexto.close();
+      await context.close();
     });
 
     it('reproduce el cálculo del enunciado y lo persiste', async () => {
-      nock(HOST_TASAS)
-        .get(RUTA_TASAS)
+      nock(RATES_HOST)
+        .get(RATES_PATH)
         .reply(200, { rates: { EUR: 0.85 } });
 
       const book = await api()
@@ -63,8 +63,8 @@ describe('POST /books/:id/calculate-price (e2e)', () => {
       expect(new Date(response.body.calculation_timestamp).toString()).not.toBe('Invalid Date');
 
       // El precio queda guardado: el enunciado pide actualizar el libro.
-      const recargado = await api().get(`/books/${book.body.id}`).expect(200);
-      expect(recargado.body.selling_price_local).toBe(19.03);
+      const reloaded = await api().get(`/books/${book.body.id}`).expect(200);
+      expect(reloaded.body.selling_price_local).toBe(19.03);
     });
 
     it('reutiliza la tasa cacheada en el siguiente cálculo', async () => {
@@ -88,21 +88,21 @@ describe('POST /books/:id/calculate-price (e2e)', () => {
   });
 
   describe('cuando la API de tasas falla', () => {
-    let contexto: TestApplication;
+    let context: TestApplication;
     let app: INestApplication;
     const api = () => request(app.getHttpServer());
 
     beforeAll(async () => {
-      contexto = await createTestApplication({ fallbackRate: 0.92 });
-      app = contexto.app;
+      context = await createTestApplication({ fallbackRate: 0.92 });
+      app = context.app;
     });
 
     afterAll(async () => {
-      await contexto.close();
+      await context.close();
     });
 
     it('calcula con la tasa de respaldo y lo declara en la respuesta', async () => {
-      nock(HOST_TASAS).get(RUTA_TASAS).reply(500, 'boom');
+      nock(RATES_HOST).get(RATES_PATH).reply(500, 'boom');
 
       const book = await api()
         .post('/books')
@@ -120,7 +120,7 @@ describe('POST /books/:id/calculate-price (e2e)', () => {
     });
 
     it('también usa el respaldo si la conexión se corta', async () => {
-      nock(HOST_TASAS).get(RUTA_TASAS).replyWithError({ code: 'ECONNREFUSED' });
+      nock(RATES_HOST).get(RATES_PATH).replyWithError({ code: 'ECONNREFUSED' });
 
       const book = await api()
         .post('/books')
@@ -134,21 +134,21 @@ describe('POST /books/:id/calculate-price (e2e)', () => {
   });
 
   describe('cuando la API falla y no hay tasa de respaldo', () => {
-    let contexto: TestApplication;
+    let context: TestApplication;
     let app: INestApplication;
     const api = () => request(app.getHttpServer());
 
     beforeAll(async () => {
-      contexto = await createTestApplication({ fallbackRate: null });
-      app = contexto.app;
+      context = await createTestApplication({ fallbackRate: null });
+      app = context.app;
     });
 
     afterAll(async () => {
-      await contexto.close();
+      await context.close();
     });
 
     it('responde 503 en vez de inventar un precio', async () => {
-      nock(HOST_TASAS).get(RUTA_TASAS).reply(503, 'service unavailable');
+      nock(RATES_HOST).get(RATES_PATH).reply(503, 'service unavailable');
 
       const book = await api()
         .post('/books')
@@ -160,8 +160,8 @@ describe('POST /books/:id/calculate-price (e2e)', () => {
       expect(response.body.code).toBe('EXCHANGE_RATE_UNAVAILABLE');
 
       // Y el libro sigue sin precio de venta: no se guarda nada a medias.
-      const recargado = await api().get(`/books/${book.body.id}`).expect(200);
-      expect(recargado.body.selling_price_local).toBeNull();
+      const reloaded = await api().get(`/books/${book.body.id}`).expect(200);
+      expect(reloaded.body.selling_price_local).toBeNull();
     });
   });
 });

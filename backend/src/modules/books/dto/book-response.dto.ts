@@ -4,7 +4,7 @@ import { Book } from '../book.entity';
  * Forma pública de un libro, exactamente la que fija el enunciado.
  *
  * Es un tipo explícito y no un `Partial<Book>` para que el compilador impida
- * que una columna interna (como `isbn_normalizado`) se cuele en la respuesta
+ * que una columna interna (como `isbn_normalized`) se cuele en la respuesta
  * por el mero hecho de existir en la entidad.
  */
 export interface BookResponse {

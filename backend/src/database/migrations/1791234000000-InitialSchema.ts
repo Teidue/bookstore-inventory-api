@@ -9,7 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * datos, no sólo en los DTO.
  */
 export class InitialSchema1791234000000 implements MigrationInterface {
-  name = 'EsquemaInicial1791234000000';
+  name = 'InitialSchema1791234000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -18,7 +18,7 @@ export class InitialSchema1791234000000 implements MigrationInterface {
         "title"               varchar(255)  NOT NULL,
         "author"              varchar(255)  NOT NULL,
         "isbn"                varchar(20)   NOT NULL,
-        "isbn_normalizado"    varchar(13)   NOT NULL,
+        "isbn_normalized"     varchar(13)   NOT NULL,
         "cost_usd"            numeric(10,2) NOT NULL,
         "selling_price_local" numeric(12,2),
         "stock_quantity"      integer       NOT NULL,
@@ -27,19 +27,19 @@ export class InitialSchema1791234000000 implements MigrationInterface {
         "created_at"          timestamptz   NOT NULL DEFAULT now(),
         "updated_at"          timestamptz   NOT NULL DEFAULT now(),
         CONSTRAINT "PK_book" PRIMARY KEY ("id"),
-        CONSTRAINT "CHK_book_cost_usd_positivo"   CHECK ("cost_usd" > 0),
-        CONSTRAINT "CHK_book_stock_no_negativo"   CHECK ("stock_quantity" >= 0),
-        CONSTRAINT "CHK_book_precio_venta_positivo"
+        CONSTRAINT "CHK_book_cost_usd_positive"    CHECK ("cost_usd" > 0),
+        CONSTRAINT "CHK_book_stock_not_negative"  CHECK ("stock_quantity" >= 0),
+        CONSTRAINT "CHK_book_selling_price_positive"
           CHECK ("selling_price_local" IS NULL OR "selling_price_local" > 0),
-        CONSTRAINT "CHK_book_isbn_normalizado_formato"
-          CHECK ("isbn_normalizado" ~ '^[0-9]{13}$' OR "isbn_normalizado" ~ '^[0-9]{9}[0-9X]$')
+        CONSTRAINT "CHK_book_isbn_normalized_format"
+          CHECK ("isbn_normalized" ~ '^[0-9]{13}$' OR "isbn_normalized" ~ '^[0-9]{9}[0-9X]$')
       )
     `);
 
     // La unicidad se impone sobre el ISBN normalizado, no sobre el original:
     // si no, "978-84-376-0494-7" y "9788437604947" serían dos libros.
     await queryRunner.query(`
-      CREATE UNIQUE INDEX "UQ_book_isbn_normalizado" ON "book" ("isbn_normalizado")
+      CREATE UNIQUE INDEX "UQ_book_isbn_normalized" ON "book" ("isbn_normalized")
     `);
 
     // Índices sobre lo que el listado filtra de verdad.

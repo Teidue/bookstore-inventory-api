@@ -20,18 +20,18 @@ function fakeContext(url = '/books/1') {
 }
 
 describe('FiltroExcepciones', () => {
-  let filtro: ExceptionsFilter;
+  let filter: ExceptionsFilter;
 
   beforeEach(() => {
-    filtro = new ExceptionsFilter();
+    filter = new ExceptionsFilter();
     // El filtro registra los 5xx; se silencia para no ensuciar la salida.
-    jest.spyOn(filtro['logger'], 'error').mockImplementation(() => undefined);
+    jest.spyOn(filter['logger'], 'error').mockImplementation(() => undefined);
   });
 
   it('traduce una excepción de dominio conservando su código', () => {
     const { host, status, json } = fakeContext('/books/999');
 
-    filtro.catch(DomainException.noEncontrado(ErrorCode.BOOK_NOT_FOUND, 'No existe.'), host);
+    filter.catch(DomainException.noEncontrado(ErrorCode.BOOK_NOT_FOUND, 'No existe.'), host);
 
     expect(status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
     expect(json).toHaveBeenCalledWith(
@@ -47,7 +47,7 @@ describe('FiltroExcepciones', () => {
   it('convierte los mensajes del ValidationPipe en un error de validación', () => {
     const { host, json } = fakeContext('/books');
 
-    filtro.catch(
+    filter.catch(
       new HttpException(
         { statusCode: 400, message: ['cost_usd debe ser mayor que 0.', 'isbn inválido.'] },
         HttpStatus.BAD_REQUEST,
@@ -55,31 +55,31 @@ describe('FiltroExcepciones', () => {
       host,
     );
 
-    const cuerpo = json.mock.calls[0][0] as Record<string, unknown>;
-    expect(cuerpo.statusCode).toBe(400);
-    expect(cuerpo.code).toBe(ErrorCode.VALIDATION_ERROR);
-    expect(cuerpo.message).toBe('cost_usd debe ser mayor que 0.');
-    expect(cuerpo.details).toHaveLength(2);
+    const body = json.mock.calls[0][0] as Record<string, unknown>;
+    expect(body.statusCode).toBe(400);
+    expect(body.code).toBe(ErrorCode.VALIDATION_ERROR);
+    expect(body.message).toBe('cost_usd debe ser mayor que 0.');
+    expect(body.details).toHaveLength(2);
   });
 
   it('un fallo no previsto responde 500 sin filtrar detalles internos', () => {
     const { host, status, json } = fakeContext();
 
-    filtro.catch(new Error('connection pool exhausted at /src/secretos.ts:42'), host);
+    filter.catch(new Error('connection pool exhausted at /src/secretos.ts:42'), host);
 
     expect(status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
-    const cuerpo = json.mock.calls[0][0] as Record<string, unknown>;
-    expect(cuerpo.code).toBe(ErrorCode.INTERNAL_ERROR);
-    expect(cuerpo.message).toBe('Error interno del servidor.');
+    const body = json.mock.calls[0][0] as Record<string, unknown>;
+    expect(body.code).toBe(ErrorCode.INTERNAL_ERROR);
+    expect(body.message).toBe('Error interno del servidor.');
     // Lo importante: el mensaje real del error no llega al cliente.
-    expect(JSON.stringify(cuerpo)).not.toContain('connection pool');
-    expect(JSON.stringify(cuerpo)).not.toContain('secretos.ts');
+    expect(JSON.stringify(body)).not.toContain('connection pool');
+    expect(JSON.stringify(body)).not.toContain('secretos.ts');
   });
 
   it('un error de SQL tampoco revela la consulta', () => {
     const { host, status, json } = fakeContext();
 
-    filtro.catch(
+    filter.catch(
       new QueryFailedError('SELECT * FROM book WHERE secreto = $1', [], new Error('boom')),
       host,
     );
@@ -91,10 +91,10 @@ describe('FiltroExcepciones', () => {
   it('toda respuesta de error lleva siempre la misma forma', () => {
     const { host, json } = fakeContext();
 
-    filtro.catch(new Error('fallo'), host);
+    filter.catch(new Error('fallo'), host);
 
-    const cuerpo = json.mock.calls[0][0] as Record<string, unknown>;
-    expect(Object.keys(cuerpo).sort()).toEqual([
+    const body = json.mock.calls[0][0] as Record<string, unknown>;
+    expect(Object.keys(body).sort()).toEqual([
       'code',
       'message',
       'path',

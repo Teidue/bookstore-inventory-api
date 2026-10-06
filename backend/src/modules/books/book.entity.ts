@@ -38,9 +38,9 @@ export class Book {
    * Mismo ISBN sin guiones ni espacios.  Es la columna que lleva el índice
    * único: así `978-84-376-0494-7` y `9788437604947` no pueden coexistir.
    */
-  @Index('UQ_book_isbn_normalizado', { unique: true })
-  @Column({ name: 'isbn_normalizado', type: 'varchar', length: 13 })
-  isbnNormalizado: string;
+  @Index('UQ_book_isbn_normalized', { unique: true })
+  @Column({ name: 'isbn_normalized', type: 'varchar', length: 13 })
+  isbnNormalized: string;
 
   /**
    * Coste de importación en dólares.

@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { IsIsbn } from '../../../common/validators/isbn';
 
-const recortar = ({ value }: { value: unknown }): unknown =>
+const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
 
 /**
@@ -26,19 +26,19 @@ const recortar = ({ value }: { value: unknown }): unknown =>
  */
 export class CreateBookDto {
   @IsString()
-  @Transform(recortar)
+  @Transform(trim)
   @MinLength(1, { message: 'El title es obligatorio.' })
   @MaxLength(255)
   title: string;
 
   @IsString()
-  @Transform(recortar)
+  @Transform(trim)
   @MinLength(1, { message: 'El author es obligatorio.' })
   @MaxLength(255)
   author: string;
 
   @IsString()
-  @Transform(recortar)
+  @Transform(trim)
   @MaxLength(20)
   @IsIsbn()
   isbn: string;
@@ -62,7 +62,7 @@ export class CreateBookDto {
   stock_quantity: number;
 
   @IsString()
-  @Transform(recortar)
+  @Transform(trim)
   @MinLength(1, { message: 'La category es obligatoria.' })
   @MaxLength(120)
   category: string;

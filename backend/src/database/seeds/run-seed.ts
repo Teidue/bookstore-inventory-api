@@ -19,8 +19,8 @@ export async function seedBooks(
   let created = 0;
 
   for (const seed of BOOKS) {
-    const isbnNormalizado = normalizeIsbn(seed.isbn);
-    const existing = await repository.findOne({ where: { isbnNormalizado } });
+    const isbnNormalized = normalizeIsbn(seed.isbn);
+    const existing = await repository.findOne({ where: { isbnNormalized } });
     if (existing) continue;
 
     await repository.save(
@@ -28,7 +28,7 @@ export async function seedBooks(
         title: seed.title,
         author: seed.author,
         isbn: seed.isbn,
-        isbnNormalizado,
+        isbnNormalized,
         costUsd: seed.cost_usd,
         sellingPriceLocal: null,
         stockQuantity: seed.stock_quantity,

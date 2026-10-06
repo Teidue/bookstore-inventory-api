@@ -11,14 +11,14 @@ async function bootstrap(): Promise<void> {
   setupSwagger(app);
 
   const configService = app.get(ConfigService);
-  const puerto = configService.get<number>('PORT', 3000);
+  const port = configService.get<number>('PORT', 3000);
 
   // '0.0.0.0' y no 'localhost': dentro de un contenedor, escuchar sólo en la
   // interfaz local haría la API inalcanzable desde fuera.
-  await app.listen(puerto, '0.0.0.0');
+  await app.listen(port, '0.0.0.0');
 
-  Logger.log(`API escuchando en http://localhost:${puerto}`, 'Bootstrap');
-  Logger.log(`Documentación en http://localhost:${puerto}/docs`, 'Bootstrap');
+  Logger.log(`API escuchando en http://localhost:${port}`, 'Bootstrap');
+  Logger.log(`Documentación en http://localhost:${port}/docs`, 'Bootstrap');
 }
 
 void bootstrap();

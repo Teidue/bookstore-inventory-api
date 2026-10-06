@@ -45,7 +45,7 @@ export class BooksService {
       title: dto.title,
       author: dto.author,
       isbn: dto.isbn,
-      isbnNormalizado: normalizeIsbn(dto.isbn),
+      isbnNormalized: normalizeIsbn(dto.isbn),
       costUsd: dto.cost_usd.toFixed(2),
       sellingPriceLocal: null,
       stockQuantity: dto.stock_quantity,
@@ -97,7 +97,7 @@ export class BooksService {
     book.title = dto.title;
     book.author = dto.author;
     book.isbn = dto.isbn;
-    book.isbnNormalizado = normalizeIsbn(dto.isbn);
+    book.isbnNormalized = normalizeIsbn(dto.isbn);
     book.costUsd = dto.cost_usd.toFixed(2);
     book.stockQuantity = dto.stock_quantity;
     book.category = dto.category;

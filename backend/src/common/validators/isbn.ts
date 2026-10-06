@@ -20,8 +20,8 @@ export function normalizeIsbn(isbn: string): string {
  * implementa el requisito tal y como está escrito.
  */
 export function isValidIsbnFormat(isbn: string): boolean {
-  const normalizado = normalizeIsbn(isbn);
-  return /^\d{13}$/.test(normalizado) || /^\d{9}[\dX]$/.test(normalizado);
+  const normalized = normalizeIsbn(isbn);
+  return /^\d{13}$/.test(normalized) || /^\d{9}[\dX]$/.test(normalized);
 }
 
 export function IsIsbn(options?: ValidationOptions) {

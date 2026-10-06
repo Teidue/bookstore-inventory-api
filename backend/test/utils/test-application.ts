@@ -63,8 +63,8 @@ export async function createTestApplication(options: TestOptions = {}): Promise<
   await dataSource.initialize();
   await dataSource.runMigrations();
 
-  const moduloPrueba = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  const app = moduloPrueba.createNestApplication();
+  const testingModule = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  const app = testingModule.createNestApplication();
   setupApplication(app);
   await app.init();
 
@@ -95,6 +95,6 @@ export function validBook(overrides: Record<string, unknown> = {}) {
 }
 
 /** ISBN-13 sintético y único, para los tests que crean varios libros. */
-export function uniqueIsbn(indice: number): string {
-  return `978${String(indice).padStart(10, '0')}`;
+export function uniqueIsbn(index: number): string {
+  return `978${String(index).padStart(10, '0')}`;
 }
