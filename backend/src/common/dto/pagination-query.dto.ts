@@ -7,7 +7,7 @@ import { IsInt, IsOptional, Max, Min } from 'class-validator';
  * `limit` tiene techo: sin él, `?limit=1000000` es una denegación de servicio
  * trivial contra la base de datos.
  */
-export class PaginacionQueryDto {
+export class PaginationQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'page debe ser un número entero.' })

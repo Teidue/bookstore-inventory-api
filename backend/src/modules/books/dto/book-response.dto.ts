@@ -7,7 +7,7 @@ import { Book } from '../book.entity';
  * que una columna interna (como `isbn_normalizado`) se cuele en la respuesta
  * por el mero hecho de existir en la entidad.
  */
-export interface LibroRespuesta {
+export interface BookResponse {
   id: number;
   title: string;
   author: string;
@@ -27,18 +27,18 @@ export interface LibroRespuesta {
  * número, así que la conversión ocurre aquí, en el último paso, y nunca antes
  * de hacer cuentas con ellos.
  */
-export function aLibroRespuesta(libro: Book): LibroRespuesta {
+export function toBookResponse(book: Book): BookResponse {
   return {
-    id: libro.id,
-    title: libro.title,
-    author: libro.author,
-    isbn: libro.isbn,
-    cost_usd: Number(libro.costUsd),
-    selling_price_local: libro.sellingPriceLocal === null ? null : Number(libro.sellingPriceLocal),
-    stock_quantity: libro.stockQuantity,
-    category: libro.category,
-    supplier_country: libro.supplierCountry,
-    created_at: libro.createdAt.toISOString(),
-    updated_at: libro.updatedAt.toISOString(),
+    id: book.id,
+    title: book.title,
+    author: book.author,
+    isbn: book.isbn,
+    cost_usd: Number(book.costUsd),
+    selling_price_local: book.sellingPriceLocal === null ? null : Number(book.sellingPriceLocal),
+    stock_quantity: book.stockQuantity,
+    category: book.category,
+    supplier_country: book.supplierCountry,
+    created_at: book.createdAt.toISOString(),
+    updated_at: book.updatedAt.toISOString(),
   };
 }

@@ -12,13 +12,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { RespuestaPaginada } from '../../common/dto/respuesta-paginada.dto';
+import { PaginatedResponse } from '../../common/dto/paginated-response.dto';
 import { BooksService } from './books.service';
-import { ActualizarLibroDto } from './dto/actualizar-libro.dto';
-import { CalculoPrecioRespuesta } from './dto/calculo-precio-respuesta.dto';
-import { CrearLibroDto } from './dto/crear-libro.dto';
-import { FiltrarLibrosDto } from './dto/filtrar-libros.dto';
-import { LibroRespuesta } from './dto/libro-respuesta.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
+import { PriceCalculationResponse } from './dto/price-calculation-response.dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { FilterBooksDto } from './dto/filter-books.dto';
+import { BookResponse } from './dto/book-response.dto';
 
 /**
  * Controlador delgado: traduce HTTP a llamadas al servicio y nada más.
@@ -38,45 +38,45 @@ export class BooksController {
   @ApiResponse({ status: 201, description: 'Libro creado.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos.' })
   @ApiResponse({ status: 409, description: 'Ya existe un libro con ese ISBN.' })
-  crear(@Body() dto: CrearLibroDto): Promise<LibroRespuesta> {
+  crear(@Body() dto: CreateBookDto): Promise<BookResponse> {
     return this.booksService.crear(dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Lista libros con paginación y filtros opcionales.' })
-  listar(@Query() filtros: FiltrarLibrosDto): Promise<RespuestaPaginada<LibroRespuesta>> {
-    return this.booksService.listar(filtros);
+  listar(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
+    return this.booksService.listar(filters);
   }
 
   @Get('search')
   @ApiOperation({ summary: 'Busca libros por categoría. Admite paginación.' })
-  buscar(@Query() filtros: FiltrarLibrosDto): Promise<RespuestaPaginada<LibroRespuesta>> {
-    return this.booksService.listar(filtros);
+  buscar(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
+    return this.booksService.listar(filters);
   }
 
   @Get('low-stock')
   @ApiOperation({ summary: 'Libros con inventario bajo. Umbral por defecto: 10.' })
-  stockBajo(@Query() filtros: FiltrarLibrosDto): Promise<RespuestaPaginada<LibroRespuesta>> {
+  stockBajo(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
     // El enunciado documenta el parámetro como `threshold` y fija 10 por
     // defecto en este endpoint.  Se modifica la instancia en vez de
     // esparcirla, porque `offset` es un getter y un literal lo perdería.
-    filtros.low_stock_threshold = filtros.threshold ?? filtros.low_stock_threshold ?? 10;
-    return this.booksService.listar(filtros);
+    filters.low_stock_threshold = filters.threshold ?? filters.low_stock_threshold ?? 10;
+    return this.booksService.listar(filters);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtiene un libro por su identificador.' })
   @ApiResponse({ status: 404, description: 'El libro no existe.' })
-  obtener(@Param('id', ParseIntPipe) id: number): Promise<LibroRespuesta> {
-    return this.booksService.obtenerPorId(id);
+  obtener(@Param('id', ParseIntPipe) id: number): Promise<BookResponse> {
+    return this.booksService.findOne(id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Actualiza por completo un libro existente.' })
   actualizar(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: ActualizarLibroDto,
-  ): Promise<LibroRespuesta> {
+    @Body() dto: UpdateBookDto,
+  ): Promise<BookResponse> {
     return this.booksService.actualizar(id, dto);
   }
 
@@ -95,7 +95,7 @@ export class BooksController {
   @ApiResponse({ status: 200, description: 'Cálculo realizado.' })
   @ApiResponse({ status: 404, description: 'El libro no existe.' })
   @ApiResponse({ status: 503, description: 'Tasas no disponibles y sin respaldo configurado.' })
-  calcularPrecio(@Param('id', ParseIntPipe) id: number): Promise<CalculoPrecioRespuesta> {
-    return this.booksService.calcularPrecio(id);
+  calculatePrice(@Param('id', ParseIntPipe) id: number): Promise<PriceCalculationResponse> {
+    return this.booksService.calculatePrice(id);
   }
 }

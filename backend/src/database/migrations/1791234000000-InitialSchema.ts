@@ -8,7 +8,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * reglas de negocio (coste positivo, stock no negativo) también en la base de
  * datos, no sólo en los DTO.
  */
-export class EsquemaInicial1791234000000 implements MigrationInterface {
+export class InitialSchema1791234000000 implements MigrationInterface {
   name = 'EsquemaInicial1791234000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

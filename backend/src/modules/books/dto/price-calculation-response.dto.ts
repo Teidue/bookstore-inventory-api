@@ -1,5 +1,5 @@
 /** Origen de la tasa usada en un cálculo, para que la respuesta sea honesta. */
-export enum OrigenTasa {
+export enum RateSource {
   /** Consulta en vivo a la API de tasas de cambio. */
   Api = 'exchange_api',
   /** Respuesta cacheada de una consulta anterior todavía vigente. */
@@ -16,7 +16,7 @@ export enum OrigenTasa {
  * la API falla: sin este dato, el cliente no podría distinguir un precio
  * calculado con la tasa real de uno calculado con la de respaldo.
  */
-export interface CalculoPrecioRespuesta {
+export interface PriceCalculationResponse {
   book_id: number;
   cost_usd: number;
   exchange_rate: number;
@@ -25,5 +25,5 @@ export interface CalculoPrecioRespuesta {
   selling_price_local: number;
   currency: string;
   calculation_timestamp: string;
-  rate_source: OrigenTasa;
+  rate_source: RateSource;
 }

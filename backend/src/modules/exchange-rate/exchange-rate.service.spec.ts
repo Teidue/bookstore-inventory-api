@@ -1,21 +1,21 @@
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
-import { OrigenTasa } from '../books/dto/calculo-precio-respuesta.dto';
+import { RateSource } from '../books/dto/price-calculation-response.dto';
 import { ExchangeRateService } from './exchange-rate.service';
 
 /** Configuración mínima del servicio, con la tasa de respaldo como parámetro. */
-function configuracion(tasaRespaldo?: number): ConfigService {
-  const valores: Record<string, unknown> = {
+function configuration(fallbackRate?: number): ConfigService {
+  const values: Record<string, unknown> = {
     EXCHANGE_API_URL: 'https://api.exchangerate-api.com/v4/latest/USD',
     EXCHANGE_TIMEOUT_MS: 5000,
     EXCHANGE_CACHE_TTL_SECONDS: 600,
-    EXCHANGE_FALLBACK_RATE: tasaRespaldo,
+    EXCHANGE_FALLBACK_RATE: fallbackRate,
   };
 
   return {
-    getOrThrow: (clave: string) => valores[clave],
-    get: (clave: string) => valores[clave],
+    getOrThrow: (clave: string) => values[clave],
+    get: (clave: string) => values[clave],
   } as unknown as ConfigService;
 }
 
@@ -26,35 +26,31 @@ function respuestaApi(rates: Record<string, number>) {
 describe('ExchangeRateService', () => {
   it('devuelve la tasa de la API y la marca como tal', async () => {
     const http = { get: jest.fn().mockReturnValue(respuestaApi({ EUR: 0.85 })) };
-    const servicio = new ExchangeRateService(http as unknown as HttpService, configuracion());
+    const servicio = new ExchangeRateService(http as unknown as HttpService, configuration());
 
-    const resultado = await servicio.obtenerTasa('EUR');
+    const result = await servicio.getRate('EUR');
 
-    expect(resultado.tasa).toBe(0.85);
-    expect(resultado.origen).toBe(OrigenTasa.Api);
+    expect(result.rate).toBe(0.85);
+    expect(result.source).toBe(RateSource.Api);
     expect(http.get).toHaveBeenCalledTimes(1);
   });
 
   it('reutiliza la caché en la segunda consulta, sin volver a llamar a la API', async () => {
     const http = { get: jest.fn().mockReturnValue(respuestaApi({ EUR: 0.85 })) };
-    const servicio = new ExchangeRateService(http as unknown as HttpService, configuracion());
+    const servicio = new ExchangeRateService(http as unknown as HttpService, configuration());
 
-    await servicio.obtenerTasa('EUR');
-    const segunda = await servicio.obtenerTasa('EUR');
+    await servicio.getRate('EUR');
+    const segunda = await servicio.getRate('EUR');
 
-    expect(segunda.origen).toBe(OrigenTasa.Cache);
+    expect(segunda.source).toBe(RateSource.Cache);
     expect(http.get).toHaveBeenCalledTimes(1);
   });
 
   it('comparte una única petición entre llamadas simultáneas', async () => {
     const http = { get: jest.fn().mockReturnValue(respuestaApi({ EUR: 0.85 })) };
-    const servicio = new ExchangeRateService(http as unknown as HttpService, configuracion());
+    const servicio = new ExchangeRateService(http as unknown as HttpService, configuration());
 
-    await Promise.all([
-      servicio.obtenerTasa('EUR'),
-      servicio.obtenerTasa('EUR'),
-      servicio.obtenerTasa('EUR'),
-    ]);
+    await Promise.all([servicio.getRate('EUR'), servicio.getRate('EUR'), servicio.getRate('EUR')]);
 
     // Sin la protección contra avalancha habría tres llamadas al tercero.
     expect(http.get).toHaveBeenCalledTimes(1);
@@ -62,39 +58,39 @@ describe('ExchangeRateService', () => {
 
   it('usa la tasa de respaldo cuando la API falla', async () => {
     const http = { get: jest.fn().mockReturnValue(throwError(() => new Error('ETIMEDOUT'))) };
-    const servicio = new ExchangeRateService(http as unknown as HttpService, configuracion(0.92));
+    const servicio = new ExchangeRateService(http as unknown as HttpService, configuration(0.92));
 
-    const resultado = await servicio.obtenerTasa('EUR');
+    const result = await servicio.getRate('EUR');
 
-    expect(resultado.tasa).toBe(0.92);
-    expect(resultado.origen).toBe(OrigenTasa.Respaldo);
+    expect(result.rate).toBe(0.92);
+    expect(result.source).toBe(RateSource.Respaldo);
   });
 
   it('responde 503 si la API falla y no hay respaldo configurado', async () => {
     const http = { get: jest.fn().mockReturnValue(throwError(() => new Error('ECONNREFUSED'))) };
-    const servicio = new ExchangeRateService(http as unknown as HttpService, configuracion());
+    const servicio = new ExchangeRateService(http as unknown as HttpService, configuration());
 
-    await expect(servicio.obtenerTasa('EUR')).rejects.toMatchObject({
+    await expect(servicio.getRate('EUR')).rejects.toMatchObject({
       status: 503,
-      response: { code: 'TASA_CAMBIO_NO_DISPONIBLE' },
+      response: { code: 'EXCHANGE_RATE_UNAVAILABLE' },
     });
   });
 
   it('trata una respuesta sin la moneda pedida como un fallo del tercero', async () => {
     const http = { get: jest.fn().mockReturnValue(respuestaApi({ MXN: 18.19 })) };
-    const servicio = new ExchangeRateService(http as unknown as HttpService, configuracion(0.92));
+    const servicio = new ExchangeRateService(http as unknown as HttpService, configuration(0.92));
 
-    const resultado = await servicio.obtenerTasa('EUR');
+    const result = await servicio.getRate('EUR');
 
-    expect(resultado.origen).toBe(OrigenTasa.Respaldo);
+    expect(result.source).toBe(RateSource.Respaldo);
   });
 
   it('rechaza una respuesta con un formato inesperado', async () => {
     const http = { get: jest.fn().mockReturnValue(of({ data: { algo: 'otra cosa' } })) };
-    const servicio = new ExchangeRateService(http as unknown as HttpService, configuracion(0.92));
+    const servicio = new ExchangeRateService(http as unknown as HttpService, configuration(0.92));
 
-    const resultado = await servicio.obtenerTasa('EUR');
+    const result = await servicio.getRate('EUR');
 
-    expect(resultado.origen).toBe(OrigenTasa.Respaldo);
+    expect(result.source).toBe(RateSource.Respaldo);
   });
 });

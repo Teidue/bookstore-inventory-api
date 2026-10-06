@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
-import { PaginacionQueryDto } from '../../../common/dto/paginacion-query.dto';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 /**
  * Filtros del listado de libros.
@@ -10,7 +10,7 @@ import { PaginacionQueryDto } from '../../../common/dto/paginacion-query.dto';
  * que el dashboard puede combinarlos con la paginación en una sola consulta
  * en lugar de tener que elegir entre filtrar o paginar.
  */
-export class FiltrarLibrosDto extends PaginacionQueryDto {
+export class FilterBooksDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))

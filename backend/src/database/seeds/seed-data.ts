@@ -6,7 +6,7 @@
  * varios por debajo del umbral de stock bajo (10), incluido uno agotado.
  * El primero es el ejemplo literal del enunciado.
  */
-export interface LibroSemilla {
+export interface BookSeed {
   title: string;
   author: string;
   isbn: string;
@@ -16,7 +16,7 @@ export interface LibroSemilla {
   supplier_country: string;
 }
 
-export const LIBROS: readonly LibroSemilla[] = [
+export const BOOKS: readonly BookSeed[] = [
   {
     title: 'El Quijote',
     author: 'Miguel de Cervantes',

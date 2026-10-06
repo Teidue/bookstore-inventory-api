@@ -2,13 +2,13 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { configurarAplicacion, configurarDocumentacion } from './configurar-aplicacion';
+import { setupApplication, setupSwagger } from './application-setup';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  configurarAplicacion(app);
-  configurarDocumentacion(app);
+  setupApplication(app);
+  setupSwagger(app);
 
   const configService = app.get(ConfigService);
   const puerto = configService.get<number>('PORT', 3000);

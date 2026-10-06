@@ -1,13 +1,13 @@
-export interface MetadatosPaginacion {
+export interface PaginationMeta {
   total: number;
   page: number;
   limit: number;
   total_pages: number;
 }
 
-export interface RespuestaPaginada<T> {
+export interface PaginatedResponse<T> {
   data: T[];
-  meta: MetadatosPaginacion;
+  meta: PaginationMeta;
 }
 
 /**
@@ -15,12 +15,12 @@ export interface RespuestaPaginada<T> {
  * El `total` sale siempre de un COUNT en base de datos, nunca de la longitud
  * del array ya cargado en memoria.
  */
-export function construirRespuestaPaginada<T>(
+export function buildPaginatedResponse<T>(
   data: T[],
   total: number,
   page: number,
   limit: number,
-): RespuestaPaginada<T> {
+): PaginatedResponse<T> {
   return {
     data,
     meta: {

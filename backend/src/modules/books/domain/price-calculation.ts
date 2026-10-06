@@ -1,22 +1,22 @@
 import Decimal from 'decimal.js';
 
-export interface ParametrosCalculo {
+export interface CalculationParams {
   /** Coste en USD. Llega como string desde la base para no perder precisión. */
-  costeUsd: string | number;
+  costUsd: string | number;
   /** Unidades de moneda local por cada USD. */
-  tasa: number;
+  rate: number;
   /** Margen de ganancia en porcentaje, por ejemplo 40. */
-  margenPorcentaje: number;
+  marginPercentage: number;
 }
 
-export interface ResultadoCalculo {
+export interface CalculationResult {
   /** Coste convertido a moneda local, redondeado a 2 decimales. */
-  costeLocal: string;
+  localCost: string;
   /** Precio de venta con el margen aplicado, redondeado a 2 decimales. */
-  precioVenta: string;
+  sellingPrice: string;
 }
 
-const DECIMALES_MONETARIOS = 2;
+const MONEY_DECIMALS = 2;
 
 /**
  * Calcula el precio de venta sugerido.
@@ -32,21 +32,21 @@ const DECIMALES_MONETARIOS = 2;
  * sobre él el margen—, que es como se obtiene el resultado del ejemplo del
  * enunciado: 15.99 USD a 0.85 son 13.59, y con un 40% de margen, 19.03.
  */
-export function calcularPrecioVenta({
-  costeUsd,
-  tasa,
-  margenPorcentaje,
-}: ParametrosCalculo): ResultadoCalculo {
-  const coste = new Decimal(costeUsd);
-  const costeLocal = coste.times(tasa).toDecimalPlaces(DECIMALES_MONETARIOS, Decimal.ROUND_HALF_UP);
+export function calculateSellingPrice({
+  costUsd,
+  rate,
+  marginPercentage,
+}: CalculationParams): CalculationResult {
+  const cost = new Decimal(costUsd);
+  const localCost = cost.times(rate).toDecimalPlaces(MONEY_DECIMALS, Decimal.ROUND_HALF_UP);
 
-  const multiplicador = new Decimal(margenPorcentaje).dividedBy(100).plus(1);
-  const precioVenta = costeLocal
-    .times(multiplicador)
-    .toDecimalPlaces(DECIMALES_MONETARIOS, Decimal.ROUND_HALF_UP);
+  const multiplier = new Decimal(marginPercentage).dividedBy(100).plus(1);
+  const sellingPrice = localCost
+    .times(multiplier)
+    .toDecimalPlaces(MONEY_DECIMALS, Decimal.ROUND_HALF_UP);
 
   return {
-    costeLocal: costeLocal.toFixed(DECIMALES_MONETARIOS),
-    precioVenta: precioVenta.toFixed(DECIMALES_MONETARIOS),
+    localCost: localCost.toFixed(MONEY_DECIMALS),
+    sellingPrice: sellingPrice.toFixed(MONEY_DECIMALS),
   };
 }

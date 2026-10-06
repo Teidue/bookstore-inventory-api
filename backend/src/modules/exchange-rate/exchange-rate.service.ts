@@ -2,20 +2,20 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { CodigoError } from '../../common/constants/codigos-error';
-import { ExcepcionDominio } from '../../common/exceptions/excepcion-dominio';
-import { OrigenTasa } from '../books/dto/calculo-precio-respuesta.dto';
-import { ResultadoTasa } from './interfaces/resultado-tasa.interface';
+import { ErrorCode } from '../../common/constants/error-codes';
+import { DomainException } from '../../common/exceptions/domain-exception';
+import { RateSource } from '../books/dto/price-calculation-response.dto';
+import { RateResult } from './interfaces/rate-result.interface';
 
 /** Forma mínima que debe tener la respuesta de la API para ser utilizable. */
-interface RespuestaTasas {
+interface RatesResponse {
   rates: Record<string, number>;
 }
 
-interface TasasCacheadas {
+interface CachedRates {
   rates: Record<string, number>;
-  obtenidaEn: Date;
-  expiraEn: number;
+  fetchedAt: Date;
+  expiresAt: number;
 }
 
 /**
@@ -32,9 +32,9 @@ export class ExchangeRateService {
   private readonly url: string;
   private readonly timeoutMs: number;
   private readonly ttlMs: number;
-  private readonly tasaRespaldo?: number;
+  private readonly fallbackRate?: number;
 
-  private cache: TasasCacheadas | null = null;
+  private cache: CachedRates | null = null;
   /**
    * Petición en vuelo compartida.
    *
@@ -42,7 +42,7 @@ export class ExchangeRateService {
    * consulta y las diez esperan a la misma promesa, en lugar de diez
    * llamadas idénticas contra un servicio ajeno con cuota.
    */
-  private peticionEnCurso: Promise<TasasCacheadas> | null = null;
+  private inFlightRequest: Promise<CachedRates> | null = null;
 
   constructor(
     private readonly http: HttpService,
@@ -54,10 +54,10 @@ export class ExchangeRateService {
     // Una variable vacía en el entorno llega como cadena vacía, no como
     // `undefined`: sin esta normalización, "sin respaldo" se interpretaría
     // como una tasa válida y el precio saldría NaN en lugar de un 503.
-    const respaldo = configService.get<string | number>('EXCHANGE_FALLBACK_RATE');
-    const respaldoNumerico = respaldo === undefined || respaldo === '' ? NaN : Number(respaldo);
-    this.tasaRespaldo =
-      Number.isFinite(respaldoNumerico) && respaldoNumerico > 0 ? respaldoNumerico : undefined;
+    const fallback = configService.get<string | number>('EXCHANGE_FALLBACK_RATE');
+    const numericFallback = fallback === undefined || fallback === '' ? NaN : Number(fallback);
+    this.fallbackRate =
+      Number.isFinite(numericFallback) && numericFallback > 0 ? numericFallback : undefined;
   }
 
   /**
@@ -67,76 +67,76 @@ export class ExchangeRateService {
    * el enunciado pide que el cálculo siga funcionando. Si no la hay, responde
    * 503, que es más honesto que inventar un precio de venta.
    */
-  async obtenerTasa(moneda: string): Promise<ResultadoTasa> {
-    const codigo = moneda.toUpperCase();
+  async getRate(currency: string): Promise<RateResult> {
+    const code = currency.toUpperCase();
 
-    const cacheVigente = this.cacheVigente();
-    if (cacheVigente) {
-      const tasa = cacheVigente.rates[codigo];
-      if (typeof tasa === 'number') {
-        return { tasa, origen: OrigenTasa.Cache, obtenidaEn: cacheVigente.obtenidaEn };
+    const validCache = this.validCache();
+    if (validCache) {
+      const rate = validCache.rates[code];
+      if (typeof rate === 'number') {
+        return { rate, source: RateSource.Cache, fetchedAt: validCache.fetchedAt };
       }
     }
 
     try {
-      const tasas = await this.consultarConPeticionCompartida();
-      const tasa = tasas.rates[codigo];
+      const rates = await this.fetchRatesOnce();
+      const rate = rates.rates[code];
 
-      if (typeof tasa !== 'number' || !Number.isFinite(tasa) || tasa <= 0) {
-        throw new Error(`La API no devuelve una tasa válida para ${codigo}.`);
+      if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0) {
+        throw new Error(`La API no devuelve una tasa válida para ${code}.`);
       }
 
-      return { tasa, origen: OrigenTasa.Api, obtenidaEn: tasas.obtenidaEn };
+      return { rate, source: RateSource.Api, fetchedAt: rates.fetchedAt };
     } catch (error) {
-      return this.recurrirAlRespaldo(codigo, error);
+      return this.useFallbackRate(code, error);
     }
   }
 
-  private cacheVigente(): TasasCacheadas | null {
-    if (this.cache && this.cache.expiraEn > Date.now()) return this.cache;
+  private validCache(): CachedRates | null {
+    if (this.cache && this.cache.expiresAt > Date.now()) return this.cache;
     return null;
   }
 
-  private async consultarConPeticionCompartida(): Promise<TasasCacheadas> {
-    this.peticionEnCurso ??= this.consultar().finally(() => {
-      this.peticionEnCurso = null;
+  private async fetchRatesOnce(): Promise<CachedRates> {
+    this.inFlightRequest ??= this.fetchRates().finally(() => {
+      this.inFlightRequest = null;
     });
 
-    return this.peticionEnCurso;
+    return this.inFlightRequest;
   }
 
-  private async consultar(): Promise<TasasCacheadas> {
-    const respuesta = await firstValueFrom(
-      this.http.get<RespuestaTasas>(this.url, { timeout: this.timeoutMs }),
+  private async fetchRates(): Promise<CachedRates> {
+    const response = await firstValueFrom(
+      this.http.get<RatesResponse>(this.url, { timeout: this.timeoutMs }),
     );
 
-    const rates = respuesta.data?.rates;
+    const rates = response.data?.rates;
     if (!rates || typeof rates !== 'object') {
       throw new Error('La respuesta de la API de tasas no tiene el formato esperado.');
     }
 
-    const tasas: TasasCacheadas = {
+    const cached: CachedRates = {
       rates,
-      obtenidaEn: new Date(),
-      expiraEn: Date.now() + this.ttlMs,
+      fetchedAt: new Date(),
+      expiresAt: Date.now() + this.ttlMs,
     };
 
-    this.cache = tasas;
-    return tasas;
+    this.cache = cached;
+    return cached;
   }
 
-  private recurrirAlRespaldo(codigo: string, error: unknown): ResultadoTasa {
-    const motivo = error instanceof Error ? error.message : String(error);
+  private useFallbackRate(code: string, error: unknown): RateResult {
+    const reason = error instanceof Error ? error.message : String(error);
 
-    if (this.tasaRespaldo === undefined) {
-      this.logger.error(`Sin tasa para ${codigo} y sin respaldo configurado: ${motivo}`);
-      throw ExcepcionDominio.servicioNoDisponible(
-        CodigoError.TASA_CAMBIO_NO_DISPONIBLE,
+    if (this.fallbackRate === undefined) {
+      this.logger.error(`Sin tasa para ${code} y sin respaldo configurado: ${reason}`);
+      throw DomainException.servicioNoDisponible(
+        ErrorCode.EXCHANGE_RATE_UNAVAILABLE,
         'El servicio de tasas de cambio no está disponible. Inténtalo de nuevo más tarde.',
       );
     }
 
-    this.logger.warn(`Tasa de respaldo para ${codigo} (${this.tasaRespaldo}): ${motivo}`);
-    return { tasa: this.tasaRespaldo, origen: OrigenTasa.Respaldo, obtenidaEn: new Date() };
+    this.logger.warn(`Tasa de respaldo para ${code} (${this.fallbackRate}): ${reason}`);
+    return { rate: this.fallbackRate, source: RateSource.Respaldo, fetchedAt: new Date() };
   }
 }

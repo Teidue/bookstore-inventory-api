@@ -1,10 +1,10 @@
-import { OrigenTasa } from '../../books/dto/calculo-precio-respuesta.dto';
+import { RateSource } from '../../books/dto/price-calculation-response.dto';
 
-export interface ResultadoTasa {
+export interface RateResult {
   /** Cuántas unidades de la moneda local equivalen a 1 USD. */
-  tasa: number;
+  rate: number;
   /** De dónde salió: API en vivo, caché o tasa de respaldo. */
-  origen: OrigenTasa;
+  source: RateSource;
   /** Momento en que se obtuvo de la API (no en que se leyó de la caché). */
-  obtenidaEn: Date;
+  fetchedAt: Date;
 }

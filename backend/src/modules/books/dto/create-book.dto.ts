@@ -11,7 +11,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { EsIsbn } from '../../../common/validators/isbn';
+import { IsIsbn } from '../../../common/validators/isbn';
 
 const recortar = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
@@ -24,7 +24,7 @@ const recortar = ({ value }: { value: unknown }): unknown =>
  * en el body, el `whitelist` del ValidationPipe lo descarta antes de que
  * ningún servicio lo vea.
  */
-export class CrearLibroDto {
+export class CreateBookDto {
   @IsString()
   @Transform(recortar)
   @MinLength(1, { message: 'El title es obligatorio.' })
@@ -40,7 +40,7 @@ export class CrearLibroDto {
   @IsString()
   @Transform(recortar)
   @MaxLength(20)
-  @EsIsbn()
+  @IsIsbn()
   isbn: string;
 
   /**

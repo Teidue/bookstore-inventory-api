@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FiltroExcepciones } from './common/filters/filtro-excepciones.filter';
-import { validarEntorno } from './config/env.validation';
-import { construirOpcionesBaseDatos } from './config/opciones-base-datos';
+import { ExceptionsFilter } from './common/filters/exceptions.filter';
+import { validateEnvironment } from './config/env.validation';
+import { buildDatabaseOptions } from './config/database-options';
 import { BooksModule } from './modules/books/books.module';
 
 @Module({
@@ -19,12 +19,12 @@ import { BooksModule } from './modules/books/books.module';
       // El proceso no arranca con una configuración inválida: es preferible un
       // fallo ruidoso al iniciar que un 500 sorpresa en la primera petición
       // que toque la variable que faltaba.
-      validate: validarEntorno,
+      validate: validateEnvironment,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) =>
-        construirOpcionesBaseDatos({
+        buildDatabaseOptions({
           host: configService.getOrThrow<string>('DB_HOST'),
           port: configService.getOrThrow<number>('DB_PORT'),
           username: configService.getOrThrow<string>('DB_USER'),
@@ -38,7 +38,7 @@ import { BooksModule } from './modules/books/books.module';
   providers: [
     // Salida única de errores: una sola forma de respuesta en toda la API,
     // incluidos los fallos que nadie previó.
-    { provide: APP_FILTER, useClass: FiltroExcepciones },
+    { provide: APP_FILTER, useClass: ExceptionsFilter },
   ],
 })
 export class AppModule {}

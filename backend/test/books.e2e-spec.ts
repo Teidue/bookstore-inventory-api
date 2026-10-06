@@ -1,32 +1,32 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import {
-  AplicacionPrueba,
-  crearAplicacionPrueba,
-  isbnUnico,
-  libroValido,
-} from './utilidades/aplicacion-prueba';
+  TestApplication,
+  createTestApplication,
+  uniqueIsbn,
+  validBook,
+} from './utils/test-application';
 
 describe('CRUD de libros (e2e)', () => {
-  let contexto: AplicacionPrueba;
+  let contexto: TestApplication;
   let app: INestApplication;
 
   const api = () => request(app.getHttpServer());
 
   beforeAll(async () => {
-    contexto = await crearAplicacionPrueba();
+    contexto = await createTestApplication();
     app = contexto.app;
   });
 
   afterAll(async () => {
-    await contexto.cerrar();
+    await contexto.close();
   });
 
   describe('POST /books', () => {
     it('crea un libro con la forma exacta del contrato', async () => {
-      const respuesta = await api().post('/books').send(libroValido()).expect(201);
+      const response = await api().post('/books').send(validBook()).expect(201);
 
-      expect(respuesta.body).toMatchObject({
+      expect(response.body).toMatchObject({
         title: 'El Quijote',
         author: 'Miguel de Cervantes',
         isbn: '978-84-376-0494-7',
@@ -36,36 +36,36 @@ describe('CRUD de libros (e2e)', () => {
         category: 'Literatura Clásica',
         supplier_country: 'ES',
       });
-      expect(typeof respuesta.body.id).toBe('number');
-      expect(new Date(respuesta.body.created_at).toString()).not.toBe('Invalid Date');
+      expect(typeof response.body.id).toBe('number');
+      expect(new Date(response.body.created_at).toString()).not.toBe('Invalid Date');
       // La columna interna de unicidad no forma parte del contrato público.
-      expect(respuesta.body).not.toHaveProperty('isbn_normalizado');
+      expect(response.body).not.toHaveProperty('isbn_normalizado');
     });
 
     it('nace sin precio de venta aunque lo intenten enviar en el body', async () => {
-      const respuesta = await api()
+      const response = await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(1), selling_price_local: 999.99 }))
+        .send(validBook({ isbn: uniqueIsbn(1), selling_price_local: 999.99 }))
         .expect(201);
 
-      expect(respuesta.body.selling_price_local).toBeNull();
+      expect(response.body.selling_price_local).toBeNull();
     });
 
     it('rechaza un ISBN ya existente aunque cambien los guiones -> 409', async () => {
       await api()
         .post('/books')
-        .send(libroValido({ isbn: '978-0-307-47472-8' }))
+        .send(validBook({ isbn: '978-0-307-47472-8' }))
         .expect(201);
 
-      const respuesta = await api()
+      const response = await api()
         .post('/books')
-        .send(libroValido({ isbn: '9780307474728' }))
+        .send(validBook({ isbn: '9780307474728' }))
         .expect(409);
 
-      expect(respuesta.body.code).toBe('ISBN_DUPLICADO');
+      expect(response.body.code).toBe('DUPLICATE_ISBN');
     });
 
-    const casosInvalidos: [Record<string, unknown>, string][] = [
+    const invalidCases: [Record<string, unknown>, string][] = [
       [{ cost_usd: 0 }, 'cost_usd igual a 0'],
       [{ cost_usd: -5 }, 'cost_usd negativo'],
       [{ cost_usd: 10.555 }, 'cost_usd con 3 decimales'],
@@ -77,24 +77,24 @@ describe('CRUD de libros (e2e)', () => {
       [{ supplier_country: 'ESP' }, 'país de 3 letras'],
     ];
 
-    it.each(casosInvalidos)('rechaza datos inválidos (%s): %s -> 400', async (sobrescribir) => {
-      const respuesta = await api()
+    it.each(invalidCases)('rechaza datos inválidos (%s): %s -> 400', async (overrides) => {
+      const response = await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(99), ...sobrescribir }))
+        .send(validBook({ isbn: uniqueIsbn(99), ...overrides }))
         .expect(400);
 
-      expect(respuesta.body.code).toBe('VALIDACION');
-      expect(respuesta.body).toHaveProperty('path', '/books');
-      expect(respuesta.body).toHaveProperty('timestamp');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
+      expect(response.body).toHaveProperty('path', '/books');
+      expect(response.body).toHaveProperty('timestamp');
     });
 
     it('normaliza el país del proveedor a mayúsculas', async () => {
-      const respuesta = await api()
+      const response = await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(2), supplier_country: 'mx' }))
+        .send(validBook({ isbn: uniqueIsbn(2), supplier_country: 'mx' }))
         .expect(201);
 
-      expect(respuesta.body.supplier_country).toBe('MX');
+      expect(response.body.supplier_country).toBe('MX');
     });
   });
 
@@ -106,10 +106,10 @@ describe('CRUD de libros (e2e)', () => {
         await api()
           .post('/books')
           .send(
-            libroValido({
+            validBook({
               title: `Libro de prueba ${indice}`,
               author: indice % 2 === 0 ? 'Autora Par' : 'Autor Impar',
-              isbn: isbnUnico(100 + indice),
+              isbn: uniqueIsbn(100 + indice),
               category: indice % 3 === 0 ? 'Técnico' : 'Novela',
               stock_quantity: indice,
             }),
@@ -140,17 +140,17 @@ describe('CRUD de libros (e2e)', () => {
     });
 
     it('filtra por categoría sin distinguir mayúsculas', async () => {
-      const respuesta = await api().get('/books?category=técnico&limit=100').expect(200);
+      const response = await api().get('/books?category=técnico&limit=100').expect(200);
 
-      const categorias = (respuesta.body.data as { category: string }[]).map((l) => l.category);
+      const categorias = (response.body.data as { category: string }[]).map((l) => l.category);
       expect(categorias.length).toBeGreaterThan(0);
       expect(categorias.every((c) => c === 'Técnico')).toBe(true);
     });
 
     it('busca por título o autor', async () => {
-      const respuesta = await api().get('/books?search=Autora Par&limit=100').expect(200);
+      const response = await api().get('/books?search=Autora Par&limit=100').expect(200);
 
-      const autores = (respuesta.body.data as { author: string }[]).map((l) => l.author);
+      const autores = (response.body.data as { author: string }[]).map((l) => l.author);
       expect(autores.length).toBeGreaterThan(0);
       expect(autores.every((a) => a === 'Autora Par')).toBe(true);
     });
@@ -158,17 +158,17 @@ describe('CRUD de libros (e2e)', () => {
 
   describe('GET /books/search y /books/low-stock', () => {
     it('search?category= devuelve sólo esa categoría', async () => {
-      const respuesta = await api().get('/books/search?category=Novela&limit=100').expect(200);
+      const response = await api().get('/books/search?category=Novela&limit=100').expect(200);
 
-      const categorias = (respuesta.body.data as { category: string }[]).map((l) => l.category);
+      const categorias = (response.body.data as { category: string }[]).map((l) => l.category);
       expect(categorias.length).toBeGreaterThan(0);
       expect(categorias.every((c) => c === 'Novela')).toBe(true);
     });
 
     it('low-stock usa 10 como umbral por defecto', async () => {
-      const respuesta = await api().get('/books/low-stock?limit=100').expect(200);
+      const response = await api().get('/books/low-stock?limit=100').expect(200);
 
-      const stocks = (respuesta.body.data as { stock_quantity: number }[]).map(
+      const stocks = (response.body.data as { stock_quantity: number }[]).map(
         (l) => l.stock_quantity,
       );
       expect(stocks.length).toBeGreaterThan(0);
@@ -176,13 +176,13 @@ describe('CRUD de libros (e2e)', () => {
     });
 
     it('low-stock admite un umbral propio', async () => {
-      const respuesta = await api().get('/books/low-stock?threshold=3&limit=100').expect(200);
-      const stocks = (respuesta.body.data as { stock_quantity: number }[]).map(
+      const response = await api().get('/books/low-stock?threshold=3&limit=100').expect(200);
+      const stocks = (response.body.data as { stock_quantity: number }[]).map(
         (l) => l.stock_quantity,
       );
 
       expect(stocks.every((s) => s <= 3)).toBe(true);
-      expect(respuesta.body.meta.total).toBeLessThan(
+      expect(response.body.meta.total).toBeLessThan(
         (await api().get('/books/low-stock?limit=100').expect(200)).body.meta.total,
       );
     });
@@ -192,16 +192,16 @@ describe('CRUD de libros (e2e)', () => {
     it('devuelve el libro pedido', async () => {
       const creado = await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(300) }))
+        .send(validBook({ isbn: uniqueIsbn(300) }))
         .expect(201);
 
-      const respuesta = await api().get(`/books/${creado.body.id}`).expect(200);
-      expect(respuesta.body.id).toBe(creado.body.id);
+      const response = await api().get(`/books/${creado.body.id}`).expect(200);
+      expect(response.body.id).toBe(creado.body.id);
     });
 
     it('responde 404 con código identificable si no existe', async () => {
-      const respuesta = await api().get('/books/999999').expect(404);
-      expect(respuesta.body.code).toBe('LIBRO_NO_ENCONTRADO');
+      const response = await api().get('/books/999999').expect(404);
+      expect(response.body.code).toBe('BOOK_NOT_FOUND');
     });
 
     it('responde 400 si el identificador no es un número', async () => {
@@ -213,14 +213,14 @@ describe('CRUD de libros (e2e)', () => {
     it('sustituye los datos del libro', async () => {
       const creado = await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(400) }))
+        .send(validBook({ isbn: uniqueIsbn(400) }))
         .expect(201);
 
-      const respuesta = await api()
+      const response = await api()
         .put(`/books/${creado.body.id}`)
         .send(
-          libroValido({
-            isbn: isbnUnico(400),
+          validBook({
+            isbn: uniqueIsbn(400),
             title: 'Título corregido',
             stock_quantity: 99,
             cost_usd: 30.5,
@@ -228,7 +228,7 @@ describe('CRUD de libros (e2e)', () => {
         )
         .expect(200);
 
-      expect(respuesta.body).toMatchObject({
+      expect(response.body).toMatchObject({
         id: creado.body.id,
         title: 'Título corregido',
         stock_quantity: 99,
@@ -239,26 +239,26 @@ describe('CRUD de libros (e2e)', () => {
     it('responde 404 si el libro no existe', async () => {
       await api()
         .put('/books/999999')
-        .send(libroValido({ isbn: isbnUnico(401) }))
+        .send(validBook({ isbn: uniqueIsbn(401) }))
         .expect(404);
     });
 
     it('rechaza dejar dos libros con el mismo ISBN -> 409', async () => {
       const primero = await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(500) }))
+        .send(validBook({ isbn: uniqueIsbn(500) }))
         .expect(201);
       await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(501) }))
+        .send(validBook({ isbn: uniqueIsbn(501) }))
         .expect(201);
 
-      const respuesta = await api()
+      const response = await api()
         .put(`/books/${primero.body.id}`)
-        .send(libroValido({ isbn: isbnUnico(501) }))
+        .send(validBook({ isbn: uniqueIsbn(501) }))
         .expect(409);
 
-      expect(respuesta.body.code).toBe('ISBN_DUPLICADO');
+      expect(response.body.code).toBe('DUPLICATE_ISBN');
     });
   });
 
@@ -266,7 +266,7 @@ describe('CRUD de libros (e2e)', () => {
     it('elimina el libro y deja de encontrarse', async () => {
       const creado = await api()
         .post('/books')
-        .send(libroValido({ isbn: isbnUnico(600) }))
+        .send(validBook({ isbn: uniqueIsbn(600) }))
         .expect(201);
 
       await api().delete(`/books/${creado.body.id}`).expect(204);

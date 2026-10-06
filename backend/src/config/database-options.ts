@@ -1,6 +1,6 @@
 import { DataSourceOptions } from 'typeorm';
 
-export interface CredencialesBaseDatos {
+export interface DatabaseCredentials {
   host: string;
   port: number;
   username: string;
@@ -20,18 +20,18 @@ export interface CredencialesBaseDatos {
  * migración, revisable en el diff y reversible.
  */
 /** Un esquema sólo puede ser un identificador simple: va dentro de search_path. */
-const ESQUEMA_VALIDO = /^[a-z_][a-z0-9_]{0,62}$/;
+const VALID_SCHEMA = /^[a-z_][a-z0-9_]{0,62}$/;
 
-export function construirOpcionesBaseDatos(credenciales: CredencialesBaseDatos): DataSourceOptions {
-  const { schema, ...conexion } = credenciales;
+export function buildDatabaseOptions(credentials: DatabaseCredentials): DataSourceOptions {
+  const { schema, ...connection } = credentials;
 
-  if (schema && !ESQUEMA_VALIDO.test(schema)) {
+  if (schema && !VALID_SCHEMA.test(schema)) {
     throw new Error(`DB_SCHEMA "${schema}" no es válido: usa minúsculas, dígitos y guiones bajos.`);
   }
 
   return {
     type: 'postgres',
-    ...conexion,
+    ...connection,
     schema,
     // `schema` sólo afecta a las consultas que genera TypeORM; el SQL escrito a
     // mano en las migraciones no lleva prefijo y acabaría en el search_path de
@@ -42,7 +42,7 @@ export function construirOpcionesBaseDatos(credenciales: CredencialesBaseDatos):
     migrationsRun: false,
     entities: [__dirname + '/../modules/**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-    migrationsTableName: 'migraciones',
+    migrationsTableName: 'migrations',
     logging: process.env.NODE_ENV === 'development' ? ['error', 'warn', 'migration'] : ['error'],
   };
 }

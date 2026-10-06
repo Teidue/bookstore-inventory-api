@@ -24,7 +24,7 @@ export default tseslint.config(
     // En los tests, `supertest` tipa `response.body` como `any` y estrecharlo
     // exigiría envolver cada aserción. Las comprobaciones de tipo inseguro se
     // relajan sólo aquí: el código de producción las mantiene.
-    files: ['test/**/*.ts'],
+    files: ['test/**/*.ts', 'src/**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

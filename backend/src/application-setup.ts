@@ -10,7 +10,7 @@ import helmet from 'helmet';
  * exactamente la misma validación y el mismo manejo de errores que producción,
  * en vez de una copia que se desincroniza con el tiempo.
  */
-export function configurarAplicacion(app: INestApplication): void {
+export function setupApplication(app: INestApplication): void {
   const configService = app.get(ConfigService);
 
   app.use(helmet());
@@ -38,8 +38,8 @@ export function configurarAplicacion(app: INestApplication): void {
   app.enableShutdownHooks();
 }
 
-export function configurarDocumentacion(app: INestApplication): void {
-  const configuracion = new DocumentBuilder()
+export function setupSwagger(app: INestApplication): void {
+  const configuration = new DocumentBuilder()
     .setTitle('Bookstore Inventory API')
     .setDescription(
       'Gestión de inventario de librerías con cálculo de precio de venta a partir de la ' +
@@ -48,7 +48,7 @@ export function configurarDocumentacion(app: INestApplication): void {
     .setVersion('1.0')
     .build();
 
-  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, configuracion), {
+  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, configuration), {
     swaggerOptions: { persistAuthorization: true },
   });
 }

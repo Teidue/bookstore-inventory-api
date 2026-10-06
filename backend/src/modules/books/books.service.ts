@@ -2,38 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository, SelectQueryBuilder } from 'typeorm';
-import { CodigoError } from '../../common/constants/codigos-error';
-import {
-  RespuestaPaginada,
-  construirRespuestaPaginada,
-} from '../../common/dto/respuesta-paginada.dto';
-import { ExcepcionDominio } from '../../common/exceptions/excepcion-dominio';
-import { normalizarIsbn } from '../../common/validators/isbn';
+import { ErrorCode } from '../../common/constants/error-codes';
+import { PaginatedResponse, buildPaginatedResponse } from '../../common/dto/paginated-response.dto';
+import { DomainException } from '../../common/exceptions/domain-exception';
+import { normalizeIsbn } from '../../common/validators/isbn';
 import { ExchangeRateService } from '../exchange-rate/exchange-rate.service';
 import { Book } from './book.entity';
-import { calcularPrecioVenta } from './domain/calculo-precio';
-import { ActualizarLibroDto } from './dto/actualizar-libro.dto';
-import { CalculoPrecioRespuesta } from './dto/calculo-precio-respuesta.dto';
-import { CrearLibroDto } from './dto/crear-libro.dto';
-import { FiltrarLibrosDto } from './dto/filtrar-libros.dto';
-import { LibroRespuesta, aLibroRespuesta } from './dto/libro-respuesta.dto';
+import { calculateSellingPrice } from './domain/price-calculation';
+import { UpdateBookDto } from './dto/update-book.dto';
+import { PriceCalculationResponse } from './dto/price-calculation-response.dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { FilterBooksDto } from './dto/filter-books.dto';
+import { BookResponse, toBookResponse } from './dto/book-response.dto';
 
 /** Código de PostgreSQL para violación de restricción de unicidad. */
-const PG_VIOLACION_UNICIDAD = '23505';
+const PG_UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class BooksService {
-  private readonly monedaLocal: string;
-  private readonly margenPorcentaje: number;
+  private readonly localCurrency: string;
+  private readonly marginPercentage: number;
 
   constructor(
     @InjectRepository(Book)
-    private readonly repositorio: Repository<Book>,
+    private readonly repository: Repository<Book>,
     private readonly exchangeRateService: ExchangeRateService,
     configService: ConfigService,
   ) {
-    this.monedaLocal = configService.getOrThrow<string>('LOCAL_CURRENCY');
-    this.margenPorcentaje = configService.getOrThrow<number>('PROFIT_MARGIN_PERCENTAGE');
+    this.localCurrency = configService.getOrThrow<string>('LOCAL_CURRENCY');
+    this.marginPercentage = configService.getOrThrow<number>('PROFIT_MARGIN_PERCENTAGE');
   }
 
   /**
@@ -43,12 +40,12 @@ export class BooksService {
    * SELECT previo: entre comprobar e insertar cabe otra petición, y esa
    * ventana es justo la que rompe una comprobación hecha a mano.
    */
-  async crear(dto: CrearLibroDto): Promise<LibroRespuesta> {
-    const libro = this.repositorio.create({
+  async crear(dto: CreateBookDto): Promise<BookResponse> {
+    const book = this.repository.create({
       title: dto.title,
       author: dto.author,
       isbn: dto.isbn,
-      isbnNormalizado: normalizarIsbn(dto.isbn),
+      isbnNormalizado: normalizeIsbn(dto.isbn),
       costUsd: dto.cost_usd.toFixed(2),
       sellingPriceLocal: null,
       stockQuantity: dto.stock_quantity,
@@ -57,9 +54,9 @@ export class BooksService {
     });
 
     try {
-      return aLibroRespuesta(await this.repositorio.save(libro));
+      return toBookResponse(await this.repository.save(book));
     } catch (error) {
-      throw this.traducirErrorUnicidad(error, dto.isbn);
+      throw this.translateUniqueViolation(error, dto.isbn);
     }
   }
 
@@ -71,56 +68,51 @@ export class BooksService {
    * tabla entera para filtrarla en memoria funcionaría con el seed y se
    * hundiría con un inventario real.
    */
-  async listar(filtros: FiltrarLibrosDto): Promise<RespuestaPaginada<LibroRespuesta>> {
-    const consulta = this.repositorio.createQueryBuilder('book');
+  async listar(filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
+    const query = this.repository.createQueryBuilder('book');
 
-    this.aplicarFiltros(consulta, filtros);
+    this.applyFilters(query, filters);
 
-    const [libros, total] = await consulta
+    const [books, total] = await query
       .orderBy('book.createdAt', 'DESC')
       // Desempate estable: sin una segunda clave, dos libros creados en el
       // mismo instante pueden cambiar de orden entre páginas y aparecer
       // repetidos o desaparecer al paginar.
       .addOrderBy('book.id', 'DESC')
-      .skip(filtros.offset)
-      .take(filtros.limit)
+      .skip(filters.offset)
+      .take(filters.limit)
       .getManyAndCount();
 
-    return construirRespuestaPaginada(
-      libros.map(aLibroRespuesta),
-      total,
-      filtros.page,
-      filtros.limit,
-    );
+    return buildPaginatedResponse(books.map(toBookResponse), total, filters.page, filters.limit);
   }
 
-  async obtenerPorId(id: number): Promise<LibroRespuesta> {
-    return aLibroRespuesta(await this.obtenerEntidad(id));
+  async findOne(id: number): Promise<BookResponse> {
+    return toBookResponse(await this.findBookOrFail(id));
   }
 
   /** PUT: el cuerpo sustituye al recurso completo, salvo el precio calculado. */
-  async actualizar(id: number, dto: ActualizarLibroDto): Promise<LibroRespuesta> {
-    const libro = await this.obtenerEntidad(id);
+  async actualizar(id: number, dto: UpdateBookDto): Promise<BookResponse> {
+    const book = await this.findBookOrFail(id);
 
-    libro.title = dto.title;
-    libro.author = dto.author;
-    libro.isbn = dto.isbn;
-    libro.isbnNormalizado = normalizarIsbn(dto.isbn);
-    libro.costUsd = dto.cost_usd.toFixed(2);
-    libro.stockQuantity = dto.stock_quantity;
-    libro.category = dto.category;
-    libro.supplierCountry = dto.supplier_country;
+    book.title = dto.title;
+    book.author = dto.author;
+    book.isbn = dto.isbn;
+    book.isbnNormalizado = normalizeIsbn(dto.isbn);
+    book.costUsd = dto.cost_usd.toFixed(2);
+    book.stockQuantity = dto.stock_quantity;
+    book.category = dto.category;
+    book.supplierCountry = dto.supplier_country;
 
     try {
-      return aLibroRespuesta(await this.repositorio.save(libro));
+      return toBookResponse(await this.repository.save(book));
     } catch (error) {
-      throw this.traducirErrorUnicidad(error, dto.isbn);
+      throw this.translateUniqueViolation(error, dto.isbn);
     }
   }
 
   async eliminar(id: number): Promise<void> {
-    const libro = await this.obtenerEntidad(id);
-    await this.repositorio.remove(libro);
+    const book = await this.findBookOrFail(id);
+    await this.repository.remove(book);
   }
 
   /**
@@ -130,29 +122,29 @@ export class BooksService {
    * en un 503), después se calcula y sólo al final se escribe en la base. Así
    * nunca queda un precio a medias si el tercero no responde.
    */
-  async calcularPrecio(id: number): Promise<CalculoPrecioRespuesta> {
-    const libro = await this.obtenerEntidad(id);
-    const { tasa, origen } = await this.exchangeRateService.obtenerTasa(this.monedaLocal);
+  async calculatePrice(id: number): Promise<PriceCalculationResponse> {
+    const book = await this.findBookOrFail(id);
+    const { rate, source } = await this.exchangeRateService.getRate(this.localCurrency);
 
-    const { costeLocal, precioVenta } = calcularPrecioVenta({
-      costeUsd: libro.costUsd,
-      tasa,
-      margenPorcentaje: this.margenPorcentaje,
+    const { localCost, sellingPrice } = calculateSellingPrice({
+      costUsd: book.costUsd,
+      rate,
+      marginPercentage: this.marginPercentage,
     });
 
-    libro.sellingPriceLocal = precioVenta;
-    await this.repositorio.save(libro);
+    book.sellingPriceLocal = sellingPrice;
+    await this.repository.save(book);
 
     return {
-      book_id: libro.id,
-      cost_usd: Number(libro.costUsd),
-      exchange_rate: tasa,
-      cost_local: Number(costeLocal),
-      margin_percentage: this.margenPorcentaje,
-      selling_price_local: Number(precioVenta),
-      currency: this.monedaLocal,
+      book_id: book.id,
+      cost_usd: Number(book.costUsd),
+      exchange_rate: rate,
+      cost_local: Number(localCost),
+      margin_percentage: this.marginPercentage,
+      selling_price_local: Number(sellingPrice),
+      currency: this.localCurrency,
       calculation_timestamp: new Date().toISOString(),
-      rate_source: origen,
+      rate_source: source,
     };
   }
 
@@ -160,49 +152,49 @@ export class BooksService {
   // Interno
   // -------------------------------------------------------------------------
 
-  private aplicarFiltros(consulta: SelectQueryBuilder<Book>, filtros: FiltrarLibrosDto): void {
-    if (filtros.category) {
+  private applyFilters(query: SelectQueryBuilder<Book>, filters: FilterBooksDto): void {
+    if (filters.category) {
       // Insensible a mayúsculas: el usuario no tiene por qué escribir la
       // categoría exactamente como se guardó.
-      consulta.andWhere('LOWER(book.category) = LOWER(:category)', {
-        category: filtros.category,
+      query.andWhere('LOWER(book.category) = LOWER(:category)', {
+        category: filters.category,
       });
     }
 
-    if (filtros.low_stock_threshold !== undefined) {
-      consulta.andWhere('book.stockQuantity <= :umbral', {
-        umbral: filtros.low_stock_threshold,
+    if (filters.low_stock_threshold !== undefined) {
+      query.andWhere('book.stockQuantity <= :threshold', {
+        threshold: filters.low_stock_threshold,
       });
     }
 
-    if (filtros.search) {
+    if (filters.search) {
       // El patrón va como parámetro y se escapan los comodines: sin eso, un
       // search de "100%" buscaría "100" seguido de cualquier cosa.
-      consulta.andWhere('(book.title ILIKE :patron OR book.author ILIKE :patron)', {
-        patron: `%${escaparComodines(filtros.search)}%`,
+      query.andWhere('(book.title ILIKE :pattern OR book.author ILIKE :pattern)', {
+        pattern: `%${escapeWildcards(filters.search)}%`,
       });
     }
   }
 
-  private async obtenerEntidad(id: number): Promise<Book> {
-    const libro = await this.repositorio.findOne({ where: { id } });
+  private async findBookOrFail(id: number): Promise<Book> {
+    const book = await this.repository.findOne({ where: { id } });
 
-    if (!libro) {
-      throw ExcepcionDominio.noEncontrado(
-        CodigoError.LIBRO_NO_ENCONTRADO,
+    if (!book) {
+      throw DomainException.noEncontrado(
+        ErrorCode.BOOK_NOT_FOUND,
         `No existe ningún libro con id ${id}.`,
       );
     }
 
-    return libro;
+    return book;
   }
 
-  private traducirErrorUnicidad(error: unknown, isbn: string): unknown {
+  private translateUniqueViolation(error: unknown, isbn: string): unknown {
     if (error instanceof QueryFailedError) {
-      const codigo = (error as QueryFailedError & { code?: string }).code;
-      if (codigo === PG_VIOLACION_UNICIDAD) {
-        return ExcepcionDominio.conflicto(
-          CodigoError.ISBN_DUPLICADO,
+      const code = (error as QueryFailedError & { code?: string }).code;
+      if (code === PG_UNIQUE_VIOLATION) {
+        return DomainException.conflicto(
+          ErrorCode.DUPLICATE_ISBN,
           `Ya existe un libro con el isbn ${isbn}.`,
         );
       }
@@ -212,6 +204,6 @@ export class BooksService {
 }
 
 /** Neutraliza los comodines de LIKE para que la búsqueda sea literal. */
-function escaparComodines(texto: string): string {
-  return texto.replace(/[\\%_]/g, (caracter) => `\\${caracter}`);
+function escapeWildcards(text: string): string {
+  return text.replace(/[\\%_]/g, (char) => `\\${char}`);
 }

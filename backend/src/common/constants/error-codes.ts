@@ -5,19 +5,19 @@
  * *cuál* problema concreto fue.  El cliente conmuta sobre el código, nunca
  * sobre el texto del mensaje, que es para humanos y puede cambiar.
  */
-export enum CodigoError {
+export enum ErrorCode {
   // Validación de la petición (400)
-  VALIDACION = 'VALIDACION',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
 
   // Recursos (404)
-  LIBRO_NO_ENCONTRADO = 'LIBRO_NO_ENCONTRADO',
+  BOOK_NOT_FOUND = 'BOOK_NOT_FOUND',
 
   // Conflictos de unicidad (409)
-  ISBN_DUPLICADO = 'ISBN_DUPLICADO',
+  DUPLICATE_ISBN = 'DUPLICATE_ISBN',
 
   // Dependencias externas (503)
-  TASA_CAMBIO_NO_DISPONIBLE = 'TASA_CAMBIO_NO_DISPONIBLE',
+  EXCHANGE_RATE_UNAVAILABLE = 'EXCHANGE_RATE_UNAVAILABLE',
 
   // Genérico (500)
-  ERROR_INTERNO = 'ERROR_INTERNO',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
 }

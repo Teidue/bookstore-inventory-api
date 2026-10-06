@@ -1,28 +1,28 @@
-import { config as cargarDotenv } from 'dotenv';
+import { config as loadDotenv } from 'dotenv';
 import { DataSource } from 'typeorm';
-import { construirOpcionesBaseDatos } from '../config/opciones-base-datos';
+import { buildDatabaseOptions } from '../config/database-options';
 
 // La CLI de TypeORM arranca fuera de Nest, así que carga el .env por su cuenta.
 // `quiet` evita que su banner ensucie la salida de migraciones y seeds.
-cargarDotenv({ quiet: true });
+loadDotenv({ quiet: true });
 
-function requerido(clave: string): string {
-  const valor = process.env[clave];
-  if (!valor) {
+function required(clave: string): string {
+  const value = process.env[clave];
+  if (!value) {
     throw new Error(`Falta la variable de entorno ${clave}. Copia .env.example a .env.`);
   }
-  return valor;
+  return value;
 }
 
-export const opcionesDataSource = construirOpcionesBaseDatos({
-  host: requerido('DB_HOST'),
+export const dataSourceOptions = buildDatabaseOptions({
+  host: required('DB_HOST'),
   port: Number(process.env.DB_PORT ?? 5432),
-  username: requerido('DB_USER'),
+  username: required('DB_USER'),
   password: process.env.DB_PASSWORD ?? '',
-  database: requerido('DB_NAME'),
+  database: required('DB_NAME'),
   schema: process.env.DB_SCHEMA || undefined,
 });
 
 /** Export por defecto que consume `typeorm -d src/database/data-source.ts`. */
-const dataSource = new DataSource(opcionesDataSource);
+const dataSource = new DataSource(dataSourceOptions);
 export default dataSource;

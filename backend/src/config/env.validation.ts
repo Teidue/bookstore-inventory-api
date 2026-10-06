@@ -14,14 +14,14 @@ import {
   validateSync,
 } from 'class-validator';
 
-export enum Entorno {
+export enum Environment {
   Development = 'development',
   Test = 'test',
   Production = 'production',
 }
 
 /** Una variable vacía en el `.env` equivale a no haberla definido. */
-const vacioEsIndefinido = ({ value }: { value: unknown }): unknown =>
+const emptyToUndefined = ({ value }: { value: unknown }): unknown =>
   value === '' ? undefined : value;
 
 /**
@@ -31,9 +31,9 @@ const vacioEsIndefinido = ({ value }: { value: unknown }): unknown =>
  * inmediatamente, en vez de fallar más tarde con un error incomprensible en
  * mitad de una petición.
  */
-export class VariablesEntorno {
-  @IsEnum(Entorno)
-  NODE_ENV: Entorno = Entorno.Development;
+export class EnvironmentVariables {
+  @IsEnum(Environment)
+  NODE_ENV: Environment = Environment.Development;
 
   @IsInt()
   @Min(1)
@@ -62,7 +62,7 @@ export class VariablesEntorno {
 
   /** Sólo lo usan los tests de integración, para aislarse en su propio esquema. */
   @IsOptional()
-  @Transform(vacioEsIndefinido)
+  @Transform(emptyToUndefined)
   @IsString()
   @IsNotEmpty()
   DB_SCHEMA?: string;
@@ -96,7 +96,7 @@ export class VariablesEntorno {
    * prefiere, y la respuesta dice siempre qué origen se usó.
    */
   @IsOptional()
-  @Transform(vacioEsIndefinido)
+  @Transform(emptyToUndefined)
   @IsNumber()
   @IsPositive()
   EXCHANGE_FALLBACK_RATE?: number;
@@ -106,20 +106,20 @@ export class VariablesEntorno {
   CORS_ORIGIN: string = 'http://localhost:5173';
 }
 
-export function validarEntorno(configuracion: Record<string, unknown>): VariablesEntorno {
-  const validada = plainToInstance(VariablesEntorno, configuracion, {
+export function validateEnvironment(configuration: Record<string, unknown>): EnvironmentVariables {
+  const validated = plainToInstance(EnvironmentVariables, configuration, {
     enableImplicitConversion: true,
     exposeDefaultValues: true,
   });
 
-  const errores = validateSync(validada, { skipMissingProperties: false });
+  const errors = validateSync(validated, { skipMissingProperties: false });
 
-  if (errores.length > 0) {
-    const detalle = errores
+  if (errors.length > 0) {
+    const detail = errors
       .map((e) => `  - ${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`)
       .join('\n');
-    throw new Error(`Configuración de entorno inválida:\n${detalle}`);
+    throw new Error(`Configuración de entorno inválida:\n${detail}`);
   }
 
-  return validada;
+  return validated;
 }

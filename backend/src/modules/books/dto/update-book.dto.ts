@@ -1,4 +1,4 @@
-import { CrearLibroDto } from './crear-libro.dto';
+import { CreateBookDto } from './create-book.dto';
 
 /**
  * Actualización completa de un libro (`PUT`).
@@ -11,4 +11,4 @@ import { CrearLibroDto } from './crear-libro.dto';
  * de precio, para que no pueda quedar un precio de venta incoherente con el
  * coste y la tasa con la que se obtuvo.
  */
-export class ActualizarLibroDto extends CrearLibroDto {}
+export class UpdateBookDto extends CreateBookDto {}

@@ -1,33 +1,33 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { config as cargarDotenv } from 'dotenv';
+import { config as loadDotenv } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../src/app.module';
-import { construirOpcionesBaseDatos } from '../../src/config/opciones-base-datos';
-import { configurarAplicacion } from '../../src/configurar-aplicacion';
+import { buildDatabaseOptions } from '../../src/config/database-options';
+import { setupApplication } from '../../src/application-setup';
 
-cargarDotenv({ quiet: true });
+loadDotenv({ quiet: true });
 
-export interface AplicacionPrueba {
+export interface TestApplication {
   app: INestApplication;
-  origen: DataSource;
-  esquema: string;
-  cerrar: () => Promise<void>;
+  dataSource: DataSource;
+  schema: string;
+  close: () => Promise<void>;
 }
 
-export interface OpcionesPrueba {
+export interface TestOptions {
   /** Tasa de respaldo; `null` arranca la app sin ninguna, para probar el 503. */
-  tasaRespaldo?: number | null;
+  fallbackRate?: number | null;
 }
 
-function credenciales(esquema?: string) {
+function credentials(schema?: string) {
   return {
     host: process.env.DB_HOST ?? 'localhost',
     port: Number(process.env.DB_PORT ?? 5432),
     username: process.env.DB_USER ?? 'postgres',
     password: process.env.DB_PASSWORD ?? '',
     database: process.env.DB_NAME ?? 'bookstore_inventory',
-    schema: esquema,
+    schema: schema,
   };
 }
 
@@ -41,49 +41,47 @@ function credenciales(esquema?: string) {
  * esquema se crea al empezar y se destruye al terminar, así que los tests
  * nunca tocan los datos de desarrollo.
  */
-export async function crearAplicacionPrueba(
-  opciones: OpcionesPrueba = {},
-): Promise<AplicacionPrueba> {
-  const esquema = `e2e_${Date.now()}_${Math.floor(Math.random() * 10_000)}`;
+export async function createTestApplication(options: TestOptions = {}): Promise<TestApplication> {
+  const schema = `e2e_${Date.now()}_${Math.floor(Math.random() * 10_000)}`;
 
-  const administracion = new DataSource({ type: 'postgres', ...credenciales() });
-  await administracion.initialize();
-  await administracion.query(`CREATE SCHEMA "${esquema}"`);
-  await administracion.destroy();
+  const admin = new DataSource({ type: 'postgres', ...credentials() });
+  await admin.initialize();
+  await admin.query(`CREATE SCHEMA "${schema}"`);
+  await admin.destroy();
 
   // La configuración de la app se fija por entorno antes de construirla:
   // ConfigModule lee process.env, y dotenv no pisa lo que ya está definido.
   process.env.NODE_ENV = 'test';
-  process.env.DB_SCHEMA = esquema;
+  process.env.DB_SCHEMA = schema;
   process.env.LOCAL_CURRENCY = 'EUR';
   process.env.PROFIT_MARGIN_PERCENTAGE = '40';
   process.env.EXCHANGE_CACHE_TTL_SECONDS = '600';
   process.env.EXCHANGE_FALLBACK_RATE =
-    opciones.tasaRespaldo === null ? '' : String(opciones.tasaRespaldo ?? 0.92);
+    options.fallbackRate === null ? '' : String(options.fallbackRate ?? 0.92);
 
-  const origen = new DataSource(construirOpcionesBaseDatos(credenciales(esquema)));
-  await origen.initialize();
-  await origen.runMigrations();
+  const dataSource = new DataSource(buildDatabaseOptions(credentials(schema)));
+  await dataSource.initialize();
+  await dataSource.runMigrations();
 
   const moduloPrueba = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduloPrueba.createNestApplication();
-  configurarAplicacion(app);
+  setupApplication(app);
   await app.init();
 
   return {
     app,
-    origen,
-    esquema,
-    cerrar: async () => {
+    dataSource,
+    schema,
+    close: async () => {
       await app.close();
-      await origen.query(`DROP SCHEMA "${esquema}" CASCADE`);
-      await origen.destroy();
+      await dataSource.query(`DROP SCHEMA "${schema}" CASCADE`);
+      await dataSource.destroy();
     },
   };
 }
 
 /** Cuerpo válido de ejemplo, para no repetirlo en cada test. */
-export function libroValido(sobrescribir: Record<string, unknown> = {}) {
+export function validBook(overrides: Record<string, unknown> = {}) {
   return {
     title: 'El Quijote',
     author: 'Miguel de Cervantes',
@@ -92,11 +90,11 @@ export function libroValido(sobrescribir: Record<string, unknown> = {}) {
     stock_quantity: 25,
     category: 'Literatura Clásica',
     supplier_country: 'ES',
-    ...sobrescribir,
+    ...overrides,
   };
 }
 
 /** ISBN-13 sintético y único, para los tests que crean varios libros. */
-export function isbnUnico(indice: number): string {
+export function uniqueIsbn(indice: number): string {
   return `978${String(indice).padStart(10, '0')}`;
 }
