@@ -46,7 +46,10 @@ services:
       EXCHANGE_API_URL: ${EXCHANGE_API_URL:-https://api.exchangerate-api.com/v4/latest/USD}
       EXCHANGE_TIMEOUT_MS: ${EXCHANGE_TIMEOUT_MS:-5000}
       EXCHANGE_CACHE_TTL_SECONDS: ${EXCHANGE_CACHE_TTL_SECONDS:-600}
-      EXCHANGE_FALLBACK_RATE: ${EXCHANGE_FALLBACK_RATE:-0.92}
+      # Sin los dos puntos (`-` y no `:-`): el valor por defecto sólo se aplica si la
+      # variable NO está definida. Con `:-` también se aplicaría si está vacía, y
+      # dejarla vacía a propósito (para que la API responda 503) sería imposible.
+      EXCHANGE_FALLBACK_RATE: ${EXCHANGE_FALLBACK_RATE-0.92}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
     ports:
       - '3000:3000'

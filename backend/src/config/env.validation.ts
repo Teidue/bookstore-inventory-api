@@ -96,7 +96,6 @@ export class EnvironmentVariables {
    * prefiere, y la respuesta dice siempre qué origen se usó.
    */
   @IsOptional()
-  @Transform(emptyToUndefined)
   @IsNumber()
   @IsPositive()
   EXCHANGE_FALLBACK_RATE?: number;
@@ -106,8 +105,25 @@ export class EnvironmentVariables {
   CORS_ORIGIN: string = 'http://localhost:5173';
 }
 
+/**
+ * Variables numéricas opcionales que, vacías, significan «no configurada».
+ *
+ * Hay que descartarlas ANTES de convertir. Con `enableImplicitConversion`,
+ * class-transformer convierte `''` en `0` antes de que un `@Transform` llegue a
+ * verlo, así que `emptyToUndefined` no puede resolverlo a nivel de campo y una
+ * variable vacía hacía fallar el arranque aunque la documentación la presenta
+ * como la forma de pedir un 503 en lugar de un precio con tasa de respaldo.
+ */
+const BLANK_MEANS_UNSET = ['EXCHANGE_FALLBACK_RATE'] as const;
+
 export function validateEnvironment(configuration: Record<string, unknown>): EnvironmentVariables {
-  const validated = plainToInstance(EnvironmentVariables, configuration, {
+  const normalized = { ...configuration };
+  for (const key of BLANK_MEANS_UNSET) {
+    const value = normalized[key];
+    if (typeof value === 'string' && value.trim() === '') delete normalized[key];
+  }
+
+  const validated = plainToInstance(EnvironmentVariables, normalized, {
     enableImplicitConversion: true,
     exposeDefaultValues: true,
   });
