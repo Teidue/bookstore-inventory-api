@@ -302,10 +302,14 @@ curl -X DELETE http://localhost:3000/books/1   # 204 sin cuerpo
 ```
 
 `PUT` sustituye el recurso completo, así que el cuerpo debe traer todos los
-campos. No altera `selling_price_local`: ese valor sólo lo escribe el cálculo.
-**Consecuencia a tener en cuenta:** si el `PUT` cambia `cost_usd`, el precio ya
-calculado se conserva y queda desactualizado hasta que se vuelva a calcular
-(véase la sección 10).
+campos. `selling_price_local` no se acepta en el cuerpo: ese valor sólo lo
+escribe el cálculo.
+
+**Si el `PUT` cambia `cost_usd`, el precio de venta ya calculado vuelve a
+`null`** (sin calcular), porque correspondía al coste anterior y mostrarlo junto
+al coste nuevo sería un dato falso. Si el coste no cambia (aunque se envíe con
+otra forma, como `15.9` en lugar de `15.90`), el precio se conserva. El nuevo
+precio se obtiene volviendo a llamar a `calculate-price`.
 
 ---
 
@@ -409,7 +413,9 @@ SPA en React que consume los 8 endpoints de la API. Con Docker está en
 5. **Duplicado**: repite la operación con el mismo ISBN y verás el error 409.
 6. **Calcular precio**: en el detalle, «Calcular precio de venta». Aparece el
    desglose con coste, tasa, margen (+40%) y precio final, y un aviso de éxito.
-7. **Editar** el libro (botón «Editar») y cambia el stock; guarda.
+7. **Editar** el libro (botón «Editar»). Cambia solo el título y guarda: el
+   precio calculado se conserva. Vuelve a editar y cambia el **coste**: el precio
+   vuelve a «Sin calcular» y un aviso lo explica.
 8. **Eliminar** con el botón del detalle: pide confirmación; `Escape` cancela.
 9. **Errores**: abre <http://localhost:8080/books/999999> (404 con reintento) y
    <http://localhost:8080/ruta-inventada> (página 404).
@@ -444,13 +450,13 @@ Impórtala desde **Import → File**. Define la variable `base_url`
 nada. Se puede repetir las veces que haga falta: cada ejecución genera su propio
 ISBN válido y borra al final el libro que crea.
 
-17 peticiones y 40 aserciones, organizadas en cinco carpetas:
+18 peticiones y 43 aserciones, organizadas en cinco carpetas:
 
 1. **CRUD de libros**: crear, listar paginado, obtener, actualizar.
 2. **Búsquedas**: por categoría y por stock bajo (con umbral y por defecto),
    comprobando que los resultados cumplen el filtro.
-3. **Cálculo de precio**: desglose completo, margen del 40% y que el precio
-   queda guardado en el libro.
+3. **Cálculo de precio**: desglose completo, margen del 40%, que el precio
+   queda guardado en el libro y que editar el coste lo reinicia.
 4. **Errores esperados**: 400 (ISBN, coste, stock), 404 y 409, comprobando el
    código de estado, el `code` y la forma uniforme del error.
 5. **Limpieza**: borrado y comprobación de que ya no existe.
@@ -488,15 +494,16 @@ ISBN, el filtro global de excepciones, la validación del entorno al arrancar
 (incluida la tasa de respaldo vacía), y el servicio de tasas con sus cuatro
 caminos (API, caché, respaldo y 503).
 
-**35 de integración**: levantan la aplicación completa contra PostgreSQL real y
+**38 de integración**: levantan la aplicación completa contra PostgreSQL real y
 la atacan por HTTP. Cada archivo crea su propio esquema efímero, lo migra y lo
 destruye al terminar, así que no tocan los datos de desarrollo. La API de tasas
 se simula con `nock` y la red real queda deshabilitada, lo que permite forzar
 sus fallos y comprobar el respaldo (`rate_source: "fallback"`) y el `503`.
 Cubren el CRUD, las reglas de negocio, la paginación y los filtros, el ISBN
-duplicado (incluido con distintos guiones), y el cálculo de precio.
+duplicado (incluido con distintos guiones), el reinicio del precio al cambiar el
+coste, y el cálculo de precio.
 
-**Colección de Postman**: 40 aserciones, ejecutables con `newman` (sección 7).
+**Colección de Postman**: 43 aserciones, ejecutables con `newman` (sección 7).
 
 **Interfaz**: no tiene tests automatizados en el repositorio. Se verificó durante
 el desarrollo con un navegador real (Chrome controlado por script): flujo
@@ -548,6 +555,9 @@ Cada requisito del documento, cómo se cumple y por qué se hizo así. ✅ cumpl
 - ✅ **`GET /books/{id}`**, **`PUT /books/{id}`**, **`DELETE /books/{id}`**
   (`204`). *Por qué:* `PUT` exige el recurso completo, que es lo que significa el
   verbo; admitir campos sueltos sería un `PATCH`, que el documento no pide.
+  *Matiz añadido:* si el `PUT` cambia el coste, el precio de venta ya calculado
+  se reinicia a `null`, para que nunca quede un precio que no corresponde al
+  coste guardado.
 - ✅ **Opcional `GET /books/search?category=`**: implementado. Coincidencia
   parcial y sin distinguir mayúsculas, porque se usa desde un cuadro de texto
   libre.
@@ -611,7 +621,7 @@ Cada requisito del documento, cómo se cumple y por qué se hizo así. ✅ cumpl
 - ✅ **README** con requisitos previos (sección 2.1), pasos de instalación y
   ejecución (secciones 1 y 2) y ejemplos de uso de los endpoints (sección 4).
 - ✅ **Colección de Postman exportada** con las peticiones a todos los endpoints
-  (sección 7): 17 peticiones y 40 aserciones, repetible.
+  (sección 7): 18 peticiones y 43 aserciones, repetible.
 - ✅ **Interfaz web (SPA)** (sección 6).
 
 ### Interfaz: stack y buenas prácticas
@@ -754,11 +764,13 @@ API. Están aquí para que no sorprendan.
 - **El borrado es físico.** `DELETE` elimina la fila: no hay papelera ni borrado
   lógico. Es lo más simple para este alcance y lo que el enunciado describe
   («Eliminar libro»); un inventario real podría querer conservar el histórico.
-- **El precio calculado se conserva al editar, y puede quedar desactualizado.**
-  `PUT` nunca escribe `selling_price_local`. Si cambia `cost_usd`, el precio
-  guardado corresponde al coste anterior hasta que se pulse «Calcular precio».
-  La API no lo recalcula automáticamente porque eso obligaría a que un `PUT`
-  dependiera de un servicio externo.
+- **Cambiar el coste reinicia el precio de venta.** `PUT` nunca escribe
+  `selling_price_local`, pero tampoco lo deja obsoleto: si `cost_usd` cambia, el
+  precio vuelve a `null` hasta que se calcule de nuevo. *Por qué no se recalcula
+  en el mismo `PUT`:* un `PUT` pasaría a depender de un servicio externo y a poder
+  fallar por un motivo ajeno a la edición. La comparación del coste es decimal
+  exacta, así que reenviar el mismo valor con otra forma no reinicia nada. La
+  interfaz lo avisa al guardar.
 - **El precio se guarda sin moneda.** Cada libro guarda sólo el importe; la moneda
   es la configurada en `LOCAL_CURRENCY`. Cambiar esa variable no reconvierte los
   precios ya guardados: se leerían en la moneda nueva. La API admite una única
