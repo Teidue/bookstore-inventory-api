@@ -5,14 +5,16 @@ export function Brand() {
   return (
     <>
       <span
-        className="grid h-9 w-9 place-items-center rounded-lg bg-blue-600 text-white shadow-sm"
+        className="grid h-8 w-8 place-items-center rounded-lg bg-ink text-white shadow-card"
         aria-hidden="true"
       >
-        <Library size={18} strokeWidth={2.25} />
+        <Library size={17} strokeWidth={2} />
       </span>
-      <span className="flex flex-col leading-tight">
-        <span className="text-sm font-bold tracking-tight text-slate-900">Bookstore Inventory</span>
-        <span className="text-[11px] text-slate-500">Catálogo y precios de venta</span>
+      <span className="flex flex-col leading-none">
+        <span className="text-[14px] font-semibold tracking-[-0.015em] text-ink">
+          Bookstore Inventory
+        </span>
+        <span className="mt-1 text-[11px] text-ink-subtle">Catálogo y precios de venta</span>
       </span>
     </>
   );

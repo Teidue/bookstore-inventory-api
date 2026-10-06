@@ -46,7 +46,7 @@ export function NewBook() {
 
       {serverError && <ErrorAlert message={serverError} />}
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,17rem)]">
         <BookForm
           initialValues={EMPTY_VALUES}
           submitting={submitting}
@@ -56,21 +56,27 @@ export function NewBook() {
         />
 
         <Card>
-          <CardHeader title="Cómo funciona" icon={<Info size={16} aria-hidden="true" />} />
+          <CardHeader title="Cómo funciona" icon={<Info size={15} aria-hidden="true" />} />
           <CardBody>
-            <ul className="flex flex-col gap-4 text-[13px] text-slate-600">
-              <li className="flex gap-2.5">
-                <CircleCheck size={16} className="mt-0.5 shrink-0 text-blue-600" aria-hidden="true" />
+            <ul className="flex flex-col gap-5">
+              <li className="flex gap-3">
+                <CircleCheck size={16} className="mt-0.5 shrink-0 text-ink-subtle" aria-hidden="true" />
                 <div>
-                  <strong className="block text-slate-900">ISBN único</strong>
-                  Da igual cómo escribas los guiones: el mismo ISBN no se puede repetir.
+                  <strong className="block text-[13px] font-semibold text-ink">ISBN único</strong>
+                  <span className="mt-1 block text-[12px] leading-relaxed text-ink-muted">
+                    Da igual cómo escribas los guiones: el mismo ISBN no se puede repetir.
+                  </span>
                 </div>
               </li>
-              <li className="flex gap-2.5">
-                <Calculator size={16} className="mt-0.5 shrink-0 text-blue-600" aria-hidden="true" />
+              <li className="flex gap-3">
+                <Calculator size={16} className="mt-0.5 shrink-0 text-ink-subtle" aria-hidden="true" />
                 <div>
-                  <strong className="block text-slate-900">El precio se calcula aparte</strong>
-                  Nace vacío y se obtiene con la tasa de cambio del día más un 40% de margen.
+                  <strong className="block text-[13px] font-semibold text-ink">
+                    El precio se calcula aparte
+                  </strong>
+                  <span className="mt-1 block text-[12px] leading-relaxed text-ink-muted">
+                    Nace vacío y se obtiene con la tasa de cambio del día más un 40% de margen.
+                  </span>
                 </div>
               </li>
             </ul>

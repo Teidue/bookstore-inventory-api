@@ -9,9 +9,9 @@ const ICON = {
 } as const;
 
 const ACCENT: Record<ToastType, string> = {
-  success: 'text-emerald-600',
-  error: 'text-red-600',
-  info: 'text-blue-600',
+  success: 'text-positive',
+  error: 'text-critical',
+  info: 'text-accent',
 };
 
 /**
@@ -27,7 +27,7 @@ export function Toasts() {
 
   return (
     <div
-      className="fixed right-4 bottom-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2"
+      className="fixed right-5 bottom-5 z-50 flex w-[min(23rem,calc(100vw-2.5rem))] flex-col gap-2"
       role="region"
       aria-live="polite"
       aria-label="Notificaciones"
@@ -38,18 +38,20 @@ export function Toasts() {
         return (
           <div
             key={id}
-            className="flex items-start gap-2.5 rounded-lg border border-slate-200 bg-white px-3.5 py-3 shadow-lg"
+            className="flex items-start gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-overlay"
             data-testid="toast"
             data-toast-type={type}
           >
-            <Icon size={18} className={`mt-0.5 shrink-0 ${ACCENT[type]}`} aria-hidden="true" />
+            <Icon size={17} className={`mt-px shrink-0 ${ACCENT[type]}`} aria-hidden="true" />
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold text-slate-900">{title}</p>
-              {detail && <p className="mt-0.5 text-xs text-slate-600">{detail}</p>}
+              <p className="text-[13px] leading-snug font-semibold text-ink">{title}</p>
+              {detail && (
+                <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">{detail}</p>
+              )}
             </div>
             <button
               type="button"
-              className="-m-1 rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              className="-m-1 rounded-md p-1 text-ink-subtle transition-colors hover:bg-ink/5 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
               onClick={() => dismiss(id)}
               aria-label="Cerrar notificación"
             >

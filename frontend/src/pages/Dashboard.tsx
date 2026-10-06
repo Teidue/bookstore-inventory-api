@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookFiltersPanel } from '../components/books/BookFiltersPanel';
 import { BookRow } from '../components/books/BookRow';
+import { InventorySummary } from '../components/books/InventorySummary';
 import { Button } from '../components/ui/Button';
 import { Card, CardFooter } from '../components/ui/Card';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -17,7 +18,7 @@ import { useQuery } from '../hooks/useQuery';
 import { useToasts } from '../hooks/useToasts';
 import { RequestError } from '../services/apiClient';
 import { booksService } from '../services/books.service';
-import type { Book, BookFilters, PaginatedResponse } from '../types/api';
+import type { Book, BookFilters, InventoryCounts, PaginatedResponse } from '../types/api';
 import { formatCurrency } from '../utils/format';
 
 const INITIAL_FILTERS: BookFilters = {
@@ -35,7 +36,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 const HEADER_CELL =
-  'px-5 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-slate-500 uppercase';
+  'px-5 py-2.5 text-left text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-ink-subtle uppercase';
 
 export function Dashboard() {
   const { notify } = useToasts();
@@ -43,6 +44,16 @@ export function Dashboard() {
   const [pendingDeletion, setPendingDeletion] = useState<Book | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [calculatingId, setCalculatingId] = useState<number | null>(null);
+
+  /**
+   * Un único disparador para las dos consultas de la pantalla.
+   *
+   * La tabla y las cifras de cabecera miran los mismos datos: si sólo se
+   * recargara una, borrar un libro dejaría el contador desmintiendo a la lista
+   * que tiene justo debajo.
+   */
+  const [reloadToken, setReloadToken] = useState(0);
+  const refresh = useCallback(() => setReloadToken((value) => value + 1), []);
 
   // El texto se aplica con retardo; el resto de filtros, al instante.
   const search = useDebounce(filters.search);
@@ -53,13 +64,17 @@ export function Dashboard() {
     [filters, search, category],
   );
 
-  const { state, refetch } = useQuery<PaginatedResponse<Book>>(fetchBooks, [
+  const { state } = useQuery<PaginatedResponse<Book>>(fetchBooks, [
     filters.page,
     filters.limit,
     filters.low_stock_threshold,
     search,
     category,
+    reloadToken,
   ]);
+
+  const fetchCounts = useCallback((signal: AbortSignal) => booksService.counts(signal), []);
+  const { state: countsState } = useQuery<InventoryCounts>(fetchCounts, [reloadToken]);
 
   /**
    * Cualquier cambio de filtro vuelve a la página 1: quedarse en la página 4
@@ -74,6 +89,15 @@ export function Dashboard() {
     setFilters((previous) => ({ ...previous, page }));
   }, []);
 
+  /** Las tarjetas de aviso funcionan como interruptor del filtro que resumen. */
+  const toggleLowStock = useCallback((threshold: string) => {
+    setFilters((previous) => ({
+      ...previous,
+      page: 1,
+      low_stock_threshold: previous.low_stock_threshold === threshold ? '' : threshold,
+    }));
+  }, []);
+
   const calculatePrice = useCallback(
     async (book: Book) => {
       setCalculatingId(book.id);
@@ -86,7 +110,7 @@ export function Dashboard() {
           `${book.title} · tasa ${calculation.exchange_rate} ${calculation.currency}/USD` +
             (calculation.rate_source === 'fallback' ? ' (tasa de respaldo)' : ''),
         );
-        refetch();
+        refresh();
       } catch (error) {
         notify(
           'error',
@@ -99,7 +123,7 @@ export function Dashboard() {
         setCalculatingId(null);
       }
     },
-    [notify, refetch],
+    [notify, refresh],
   );
 
   const confirmDeletion = useCallback(async () => {
@@ -109,14 +133,14 @@ export function Dashboard() {
     try {
       await booksService.remove(pendingDeletion.id);
       notify('success', 'Libro eliminado', pendingDeletion.title);
-      refetch();
+      refresh();
     } catch (error) {
       notify('error', 'No se pudo eliminar', errorMessage(error, 'Inténtalo de nuevo.'));
     } finally {
       setDeleting(false);
       setPendingDeletion(null);
     }
-  }, [pendingDeletion, notify, refetch]);
+  }, [pendingDeletion, notify, refresh]);
 
   const result = state.data;
   const hasFilters =
@@ -129,10 +153,16 @@ export function Dashboard() {
         subtitle="Catálogo de libros. Los filtros y la paginación se resuelven en el servidor."
         actions={
           <Link className={buttonStyles()} to="/books/new">
-            <BookPlus size={16} aria-hidden="true" />
+            <BookPlus size={15} aria-hidden="true" />
             Añadir libro
           </Link>
         }
+      />
+
+      <InventorySummary
+        counts={countsState.data}
+        activeThreshold={filters.low_stock_threshold}
+        onFilterLowStock={toggleLowStock}
       />
 
       <BookFiltersPanel
@@ -144,27 +174,27 @@ export function Dashboard() {
 
       {result && (
         <div
-          className="mb-3 flex items-center justify-between gap-3 text-[13px] text-slate-500"
+          className="mb-2.5 flex items-center justify-between gap-3 px-1 text-[12px] text-ink-muted"
           data-testid="results-summary"
         >
           <p>
-            <strong className="font-semibold text-slate-900">{result.meta.total}</strong>{' '}
+            <span className="font-medium tabular text-ink">{result.meta.total}</span>{' '}
             {result.meta.total === 1 ? 'libro' : 'libros'}
             {hasFilters && ' con los filtros aplicados'}
           </p>
           {state.status === 'loading' && (
             <span className="inline-flex items-center gap-1.5">
-              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              <Loader2 size={13} className="animate-spin" aria-hidden="true" />
               Actualizando...
             </span>
           )}
         </div>
       )}
 
-      {state.status === 'error' && !result && <ErrorView error={state.error} onRetry={refetch} />}
+      {state.status === 'error' && !result && <ErrorView error={state.error} onRetry={refresh} />}
 
       {(result || state.status === 'loading') && (
-        <Card>
+        <Card className="overflow-hidden">
           {state.status === 'loading' && !result && (
             <SkeletonRows message="Cargando inventario..." />
           )}
@@ -181,12 +211,16 @@ export function Dashboard() {
               }
             >
               {hasFilters ? (
-                <Button type="button" variant="secondary" onClick={() => setFilters(INITIAL_FILTERS)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setFilters(INITIAL_FILTERS)}
+                >
                   Limpiar filtros
                 </Button>
               ) : (
                 <Link className={buttonStyles()} to="/books/new">
-                  <BookPlus size={16} aria-hidden="true" />
+                  <BookPlus size={15} aria-hidden="true" />
                   Añadir libro
                 </Link>
               )}
@@ -196,8 +230,22 @@ export function Dashboard() {
           {result && result.data.length > 0 && (
             <>
               <div className="overflow-x-auto" aria-busy={state.status === 'loading'}>
-                <table className="w-full border-collapse text-sm" data-testid="books-table">
-                  <thead className="border-b border-slate-200 bg-slate-50">
+                <table
+                  className="w-full table-fixed border-collapse"
+                  data-testid="books-table"
+                >
+                  {/* Anchos fijos: con `auto`, un título largo estira su
+                      columna y empuja las acciones fuera del panel. */}
+                  <colgroup>
+                    <col className="w-[30%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[13%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[12%]" />
+                    <col className="w-[5%]" />
+                    <col className="w-[19%]" />
+                  </colgroup>
+                  <thead className="border-b border-line bg-sunken">
                     <tr>
                       <th scope="col" className={HEADER_CELL}>
                         Libro
@@ -256,8 +304,8 @@ export function Dashboard() {
           title="¿Eliminar este libro?"
           description={
             <>
-              Se eliminará <strong>{pendingDeletion.title}</strong> del inventario. Esta acción no
-              se puede deshacer.
+              Se eliminará <strong className="font-semibold text-ink">{pendingDeletion.title}</strong>{' '}
+              del inventario. Esta acción no se puede deshacer.
             </>
           }
           confirmLabel="Eliminar libro"

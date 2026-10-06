@@ -39,7 +39,7 @@ export function ConfirmDialog({
   return (
     <dialog
       ref={dialogRef}
-      className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-0 text-slate-900 shadow-xl"
+      className="m-auto w-[min(27rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-0 text-ink shadow-overlay"
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-description"
       data-testid="confirm-dialog"
@@ -52,22 +52,25 @@ export function ConfirmDialog({
     >
       <div className="flex gap-3.5 p-5">
         <span
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-50 text-red-600 ring-1 ring-red-200"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-critical-soft text-critical ring-1 ring-critical/15"
           aria-hidden="true"
         >
-          <TriangleAlert size={20} />
+          <TriangleAlert size={18} />
         </span>
-        <div>
-          <h2 id="confirm-dialog-title" className="text-base font-semibold">
+        <div className="min-w-0">
+          <h2 id="confirm-dialog-title" className="text-[15px] font-semibold tracking-[-0.01em]">
             {title}
           </h2>
-          <p id="confirm-dialog-description" className="mt-1 text-[13px] text-slate-600">
+          <p
+            id="confirm-dialog-description"
+            className="mt-1.5 text-[13px] leading-relaxed text-ink-muted"
+          >
             {description}
           </p>
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+      <div className="flex justify-end gap-2 border-t border-line bg-sunken px-5 py-3.5">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={pending}>
           Cancelar
         </Button>

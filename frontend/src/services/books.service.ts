@@ -1,11 +1,25 @@
+import { LOW_STOCK_THRESHOLD } from '../config';
 import type {
   Book,
   BookFilters,
   BookPayload,
+  InventoryCounts,
   PaginatedResponse,
   PriceCalculation,
 } from '../types/api';
 import { request } from './apiClient';
+
+/** Sólo interesa el `meta.total`, así que se pide la página más pequeña posible. */
+async function countMatching(
+  params: Record<string, string | number>,
+  signal?: AbortSignal,
+): Promise<number> {
+  const page = await request<PaginatedResponse<Book>>('/books', {
+    params: { ...params, page: 1, limit: 1 },
+    signal,
+  });
+  return page.meta.total;
+}
 
 /**
  * Elige el endpoint que mejor describe la consulta.
@@ -67,4 +81,21 @@ export const booksService = {
   /** Dispara la integración externa y devuelve el desglose del cálculo. */
   calculatePrice: (id: number): Promise<PriceCalculation> =>
     request<PriceCalculation>(`/books/${id}/calculate-price`, { method: 'POST' }),
+
+  /**
+   * Cifras de cabecera del inventario.
+   *
+   * Son tres consultas de una sola fila en lugar de un endpoint de resumen:
+   * cada `COUNT` lo hace PostgreSQL sobre los índices que ya existen, y así la
+   * interfaz no obliga a ampliar el contrato de la API para una pantalla.
+   */
+  counts: async (signal?: AbortSignal): Promise<InventoryCounts> => {
+    const [total, lowStock, outOfStock] = await Promise.all([
+      countMatching({}, signal),
+      countMatching({ low_stock_threshold: LOW_STOCK_THRESHOLD }, signal),
+      countMatching({ low_stock_threshold: 0 }, signal),
+    ]);
+
+    return { total, lowStock, outOfStock };
+  },
 };

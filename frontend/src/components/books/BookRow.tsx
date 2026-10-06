@@ -1,10 +1,10 @@
 import { Calculator, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Book } from '../../types/api';
-import { formatCurrency, formatUsd } from '../../utils/format';
 import { Badge } from '../ui/Badge';
 import { StockBadge } from '../ui/StockBadge';
 import { buttonStyles } from '../ui/button-styles';
+import { formatCurrency, formatUsd } from '../../utils/format';
 
 interface BookRowProps {
   book: Book;
@@ -14,41 +14,49 @@ interface BookRowProps {
   onDelete: (book: Book) => void;
 }
 
-const CELL = 'px-5 py-3.5 align-middle';
-const NUMBER_CELL = `${CELL} text-right font-medium tabular-nums whitespace-nowrap`;
+const CELL = 'px-5 py-3 align-middle';
+const NUMBER_CELL = `${CELL} text-right tabular whitespace-nowrap`;
 
 /** Fila de la tabla de inventario. */
 export function BookRow({ book, currency, calculating, onCalculatePrice, onDelete }: BookRowProps) {
   return (
-    <tr className="border-b border-slate-200 transition-colors last:border-b-0 hover:bg-slate-50" data-testid="book-row">
+    <tr
+      className="group border-b border-line transition-colors last:border-b-0 hover:bg-sunken"
+      data-testid="book-row"
+    >
       <td className={CELL}>
         <Link
           to={`/books/${book.id}`}
-          className="font-semibold text-slate-900 transition-colors hover:text-blue-700"
+          title={book.title}
+          className="block truncate rounded text-[14px] font-medium text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
         >
           {book.title}
         </Link>
-        <div className="mt-0.5 text-xs text-slate-500">
-          {book.author} · ISBN {book.isbn}
+        <div className="mt-0.5 truncate text-[12px] text-ink-subtle">
+          {book.author}
+          <span className="mx-1.5 text-line-strong">·</span>
+          <span className="tabular">{book.isbn}</span>
         </div>
       </td>
-      <td className={CELL}>
+      <td className={`${CELL} overflow-hidden`}>
         <Badge>{book.category}</Badge>
       </td>
       <td className={CELL}>
         <StockBadge quantity={book.stock_quantity} />
       </td>
-      <td className={NUMBER_CELL}>{formatUsd(book.cost_usd)}</td>
+      <td className={`${NUMBER_CELL} text-ink-muted`}>{formatUsd(book.cost_usd)}</td>
       <td className={NUMBER_CELL}>
         {book.selling_price_local === null ? (
-          <span className="font-normal text-slate-400">Sin calcular</span>
+          <span className="text-[13px] text-ink-subtle">Sin calcular</span>
         ) : (
-          formatCurrency(book.selling_price_local, currency)
+          <span className="font-medium text-ink">
+            {formatCurrency(book.selling_price_local, currency)}
+          </span>
         )}
       </td>
-      <td className={`${CELL} text-slate-600`}>{book.supplier_country}</td>
-      <td className={CELL}>
-        <div className="flex items-center justify-end gap-1.5">
+      <td className={`${CELL} text-[13px] text-ink-muted`}>{book.supplier_country}</td>
+      <td className={`${CELL} pr-4`}>
+        <div className="flex items-center justify-end gap-1">
           <button
             type="button"
             className={buttonStyles('secondary', 'sm')}
@@ -61,11 +69,14 @@ export function BookRow({ book, currency, calculating, onCalculatePrice, onDelet
             ) : (
               <Calculator size={14} aria-hidden="true" />
             )}
-            <span className="hidden sm:inline">Calcular precio</span>
+            <span className="hidden lg:inline">Calcular precio</span>
           </button>
 
+          {/* Las acciones secundarias quedan apagadas y sólo cobran contraste
+              al apuntar la fila: con diez filas en pantalla, treinta controles
+              a plena tinta compiten con los datos. */}
           <Link
-            className={buttonStyles('secondary', 'icon')}
+            className={`${buttonStyles('ghost', 'iconSm')} text-ink-subtle group-hover:text-ink-muted`}
             to={`/books/${book.id}/edit`}
             aria-label={`Editar ${book.title}`}
             title="Editar"
@@ -75,7 +86,7 @@ export function BookRow({ book, currency, calculating, onCalculatePrice, onDelet
 
           <button
             type="button"
-            className={buttonStyles('dangerSoft', 'icon')}
+            className={`${buttonStyles('dangerSoft', 'iconSm')} group-hover:text-ink-muted`}
             onClick={() => onDelete(book)}
             aria-label={`Eliminar ${book.title}`}
             title="Eliminar"

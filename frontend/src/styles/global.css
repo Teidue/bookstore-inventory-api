@@ -1,30 +1,77 @@
 @import 'tailwindcss';
 
-/* ---------------------------------------------------------------------------
-   Tokens de la aplicación.
-
-   Tailwind cubre casi todo con sus utilidades; aquí sólo se declara lo que es
-   propio del proyecto (la tipografía) y los dos comportamientos que no se
-   pueden expresar como clase en el marcado.
-   --------------------------------------------------------------------------- */
-
+/**
+ * Tokens de diseño.
+ *
+ * Los colores se nombran por su papel (superficie, línea, tinta) y no por su
+ * tono. Así un cambio de paleta es una línea aquí y no una búsqueda de
+ * `slate-200` por cincuenta archivos, y al leer un componente se entiende qué
+ * hace cada color en lugar de qué color es.
+ */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Superficies, de la más al fondo a la más cercana. */
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-sunken: #fafbfc;
+
+  /* Separadores: el fino para dentro de un panel, el marcado para su borde. */
+  --color-line: #ebedf0;
+  --color-line-strong: #dcdfe4;
+
+  /* Texto, de más a menos contraste. */
+  --color-ink: #16181d;
+  --color-ink-muted: #5c6470;
+  --color-ink-subtle: #8d949f;
+
+  /* Acento: se reserva para lo activo, lo enfocado y la cifra que importa. */
+  --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
+  --color-accent-soft: #eff4ff;
+
+  /* Estados del inventario. */
+  --color-positive: #047857;
+  --color-positive-soft: #ecfdf5;
+  --color-caution: #b45309;
+  --color-caution-soft: #fffbeb;
+  --color-critical: #be123c;
+  --color-critical-soft: #fff1f2;
+
+  /* Sombras en dos capas: un contacto corto y una difusa, que es como se
+     comporta la luz real. Una sola capa produce el típico halo gris plano. */
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow-raised: 0 2px 4px -2px rgb(16 24 40 / 0.06), 0 4px 10px -2px rgb(16 24 40 / 0.08);
+  --shadow-overlay: 0 8px 16px -6px rgb(16 24 40 / 0.12), 0 24px 48px -12px rgb(16 24 40 / 0.18);
 }
 
 @layer base {
+  html {
+    /* 15px: la densidad propia de una herramienta de trabajo, sin llegar a la
+       letra menuda que obliga a acercarse a la pantalla. */
+    font-size: 15px;
+  }
+
   body {
-    @apply bg-slate-100 text-slate-900 antialiased;
+    @apply bg-canvas text-ink antialiased;
   }
 
-  /* El modal nativo necesita su fondo aquí: ::backdrop no es un elemento del
-     marcado y no se le puede poner una clase. */
+  /* Los importes se leen en columna: las cifras deben ocupar lo mismo. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    @apply bg-accent/15;
+  }
+
   dialog::backdrop {
-    @apply bg-slate-900/50;
+    @apply bg-ink/40;
+    backdrop-filter: blur(2px);
   }
 
-  /* Los campos numéricos muestran flechas que no aportan nada en formularios
-     de inventario y descuadran el ancho. */
+  /* Las flechas del campo numérico desalinean el texto y no aportan nada que
+     no haga ya el teclado. */
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button {
     @apply m-0 appearance-none;

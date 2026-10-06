@@ -6,11 +6,12 @@
  */
 export function inputStyles(invalid = false): string {
   const base =
-    'h-10 w-full rounded-md border bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors ' +
-    'placeholder:text-slate-400 focus:outline-none focus:ring-2 ' +
-    'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400';
+    'h-9.5 w-full rounded-lg border bg-surface px-3 text-[14px] text-ink shadow-card ' +
+    'transition-[border-color,box-shadow] duration-150 placeholder:text-ink-subtle ' +
+    'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-surface ' +
+    'disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-subtle';
 
   return invalid
-    ? `${base} border-red-500 focus:border-red-500 focus:ring-red-500/30`
-    : `${base} border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-blue-500/30`;
+    ? `${base} border-critical/60 focus:border-critical focus:ring-critical/25`
+    : `${base} border-line-strong hover:border-ink-subtle/60 focus:border-accent focus:ring-accent/25`;
 }

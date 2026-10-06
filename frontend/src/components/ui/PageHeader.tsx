@@ -15,19 +15,21 @@ export function PageHeader({ title, subtitle, back, actions }: PageHeaderProps) 
     <>
       {back && (
         <Link
-          className="mb-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900"
+          className="mb-4 -ml-1 inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
           to={back.to}
         >
           <ArrowLeft size={14} aria-hidden="true" />
           {back.label}
         </Link>
       )}
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
-          {subtitle && <div className="mt-1 text-sm text-slate-500">{subtitle}</div>}
+          <h1 className="text-[1.65rem] leading-tight font-semibold tracking-[-0.025em] text-ink">
+            {title}
+          </h1>
+          {subtitle && <div className="mt-1.5 text-[13px] text-ink-muted">{subtitle}</div>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </header>
     </>
   );

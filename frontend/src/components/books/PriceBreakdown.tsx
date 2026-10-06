@@ -2,9 +2,9 @@ import { Info, TriangleAlert } from 'lucide-react';
 import type { PriceCalculation } from '../../types/api';
 import { formatCurrency, formatDateTime, formatUsd } from '../../utils/format';
 
-const ROW = 'flex items-baseline justify-between gap-4 px-4 py-2.5 text-sm';
-const LABEL = 'text-slate-500';
-const VALUE = 'font-semibold tabular-nums text-slate-900';
+const ROW = 'flex items-baseline justify-between gap-4 py-2 text-[13px]';
+const LABEL = 'text-ink-muted';
+const VALUE = 'font-medium tabular text-ink';
 
 /**
  * Desglose del cálculo de precio.
@@ -16,7 +16,7 @@ const VALUE = 'font-semibold tabular-nums text-slate-900';
 export function PriceBreakdown({ calculation }: { calculation: PriceCalculation }) {
   return (
     <div data-testid="price-breakdown">
-      <div className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+      <div className="divide-y divide-line">
         <div className={ROW}>
           <span className={LABEL}>Coste de importación</span>
           <span className={VALUE}>{formatUsd(calculation.cost_usd)}</span>
@@ -37,25 +37,28 @@ export function PriceBreakdown({ calculation }: { calculation: PriceCalculation 
           <span className={LABEL}>Margen de ganancia</span>
           <span className={VALUE}>+{calculation.margin_percentage}%</span>
         </div>
-        <div className={`${ROW} bg-blue-50`}>
-          <span className="font-semibold text-slate-900">Precio de venta sugerido</span>
-          <span className="text-lg font-bold tabular-nums text-blue-700">
-            {formatCurrency(calculation.selling_price_local, calculation.currency)}
-          </span>
-        </div>
+      </div>
+
+      {/* El resultado se separa del desglose: es la cifra que se busca, no un
+          renglón más de la lista. */}
+      <div className="mt-3 flex items-baseline justify-between gap-4 rounded-lg bg-accent-soft px-3.5 py-3 ring-1 ring-accent/12 ring-inset">
+        <span className="text-[13px] font-medium text-ink">Precio de venta sugerido</span>
+        <span className="text-[1.25rem] leading-none font-semibold tabular tracking-[-0.02em] text-accent-strong">
+          {formatCurrency(calculation.selling_price_local, calculation.currency)}
+        </span>
       </div>
 
       {calculation.rate_source === 'fallback' ? (
-        <p className="mt-4 flex items-start gap-2 text-xs text-amber-700">
-          <TriangleAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="mt-3.5 flex items-start gap-2 text-[12px] leading-relaxed text-caution">
+          <TriangleAlert size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>
             La API de tasas no respondió, así que se ha usado la tasa de respaldo configurada.
             Vuelve a calcular más tarde para obtener la tasa real.
           </span>
         </p>
       ) : (
-        <p className="mt-4 flex items-start gap-2 text-xs text-slate-500">
-          <Info size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="mt-3.5 flex items-start gap-2 text-[12px] leading-relaxed text-ink-subtle">
+          <Info size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>
             {calculation.rate_source === 'cache'
               ? 'Tasa reutilizada de una consulta reciente.'

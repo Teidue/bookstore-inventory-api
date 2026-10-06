@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PaginationMeta } from '../../types/api';
-import { buttonStyles } from './button-styles';
 
 type Item = number | 'ellipsis';
 
@@ -26,6 +25,16 @@ interface PaginationProps {
   disabled?: boolean;
 }
 
+const STEP =
+  'grid h-8 w-8 place-items-center rounded-md border border-line-strong bg-surface text-ink-muted ' +
+  'transition-colors hover:border-ink-subtle/60 hover:text-ink disabled:pointer-events-none disabled:opacity-40';
+
+const PAGE =
+  'h-8 min-w-8 rounded-md px-2 text-[13px] font-medium tabular transition-colors ' +
+  'text-ink-muted hover:bg-ink/5 hover:text-ink';
+
+const PAGE_CURRENT = 'h-8 min-w-8 rounded-md px-2 text-[13px] font-semibold tabular bg-ink text-white';
+
 /**
  * Controles de página. Los números salen de `meta`, que el servidor calcula
  * con un COUNT: el cliente no sabe cuántos registros hay ni debe saberlo.
@@ -35,7 +44,6 @@ export function Pagination({ meta, onPageChange, disabled = false }: PaginationP
 
   const from = Math.min((meta.page - 1) * meta.limit + 1, meta.total);
   const to = Math.min(meta.page * meta.limit, meta.total);
-  const pageButton = buttonStyles('secondary', 'icon');
 
   return (
     <nav
@@ -43,40 +51,36 @@ export function Pagination({ meta, onPageChange, disabled = false }: PaginationP
       aria-label="Paginación"
       data-testid="pagination"
     >
-      <p className="text-[13px] text-slate-500">
-        Mostrando{' '}
-        <strong className="font-semibold text-slate-900">
+      <p className="text-[13px] text-ink-muted">
+        <span className="font-medium tabular text-ink">
           {from}–{to}
-        </strong>{' '}
-        de <strong className="font-semibold text-slate-900">{meta.total}</strong> · Página{' '}
-        {meta.page} de {meta.total_pages}
+        </span>{' '}
+        de <span className="font-medium tabular text-ink">{meta.total}</span>
+        <span className="mx-2 text-line-strong">·</span>
+        Página {meta.page} de {meta.total_pages}
       </p>
 
       <div className="flex items-center gap-1">
         <button
           type="button"
-          className={pageButton}
+          className={STEP}
           onClick={() => onPageChange(meta.page - 1)}
           disabled={disabled || meta.page <= 1}
           aria-label="Página anterior"
         >
-          <ChevronLeft size={16} aria-hidden="true" />
+          <ChevronLeft size={15} aria-hidden="true" />
         </button>
 
         {visiblePages(meta.page, meta.total_pages).map((item, index) =>
           item === 'ellipsis' ? (
-            <span key={`ellipsis-${index}`} className="px-1 text-slate-400" aria-hidden="true">
+            <span key={`ellipsis-${index}`} className="px-1 text-ink-subtle" aria-hidden="true">
               …
             </span>
           ) : (
             <button
               key={item}
               type="button"
-              className={
-                item === meta.page
-                  ? `${buttonStyles('primary', 'icon')} disabled:opacity-100`
-                  : pageButton
-              }
+              className={item === meta.page ? PAGE_CURRENT : PAGE}
               onClick={() => onPageChange(item)}
               disabled={disabled || item === meta.page}
               aria-current={item === meta.page ? 'page' : undefined}
@@ -89,12 +93,12 @@ export function Pagination({ meta, onPageChange, disabled = false }: PaginationP
 
         <button
           type="button"
-          className={pageButton}
+          className={STEP}
           onClick={() => onPageChange(meta.page + 1)}
           disabled={disabled || meta.page >= meta.total_pages}
           aria-label="Página siguiente"
         >
-          <ChevronRight size={16} aria-hidden="true" />
+          <ChevronRight size={15} aria-hidden="true" />
         </button>
       </div>
     </nav>

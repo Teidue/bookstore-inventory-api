@@ -1,30 +1,34 @@
-import { BookMarked, PackageSearch } from 'lucide-react';
+import { BookPlus, PackageSearch } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import { Brand } from './Brand';
 
 const BASE_LINK =
-  'inline-flex items-center gap-2 rounded-md px-3 py-2 text-[13px] font-semibold transition-colors';
+  'inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35';
 
 const linkClass = ({ isActive }: { isActive: boolean }): string =>
   isActive
-    ? `${BASE_LINK} bg-blue-50 text-blue-700`
-    : `${BASE_LINK} text-slate-600 hover:bg-slate-100 hover:text-slate-900`;
+    ? `${BASE_LINK} bg-accent-soft text-accent-strong`
+    : `${BASE_LINK} text-ink-muted hover:bg-ink/5 hover:text-ink`;
 
 export function NavBar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <Link to="/" className="flex items-center gap-2.5">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-3">
+        <Link
+          to="/"
+          className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
+        >
           <Brand />
         </Link>
 
         <nav className="flex items-center gap-1" aria-label="Principal">
           <NavLink to="/" end className={linkClass}>
-            <PackageSearch size={16} aria-hidden="true" />
+            <PackageSearch size={15} aria-hidden="true" />
             Inventario
           </NavLink>
           <NavLink to="/books/new" className={linkClass}>
-            <BookMarked size={16} aria-hidden="true" />
+            <BookPlus size={15} aria-hidden="true" />
             Añadir libro
           </NavLink>
         </nav>

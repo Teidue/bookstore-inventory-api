@@ -15,7 +15,7 @@ interface StockBadgeProps {
 export function StockBadge({ quantity, threshold = LOW_STOCK_THRESHOLD }: StockBadgeProps) {
   if (quantity === 0) {
     return (
-      <Badge tone="danger" withDot>
+      <Badge tone="critical" withDot>
         Agotado
       </Badge>
     );
@@ -23,15 +23,15 @@ export function StockBadge({ quantity, threshold = LOW_STOCK_THRESHOLD }: StockB
 
   if (quantity <= threshold) {
     return (
-      <Badge tone="warning" withDot>
-        {quantity} · stock bajo
+      <Badge tone="caution" withDot>
+        <span className="tabular">{quantity}</span> · stock bajo
       </Badge>
     );
   }
 
   return (
-    <Badge tone="success" withDot>
-      {quantity} en stock
+    <Badge tone="positive" withDot>
+      <span className="tabular">{quantity}</span> en stock
     </Badge>
   );
 }

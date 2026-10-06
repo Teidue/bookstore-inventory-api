@@ -20,9 +20,9 @@ import { formatCurrency, formatDate, formatUsd } from '../utils/format';
 /** Una línea de la ficha: etiqueta a la izquierda, dato a la derecha. */
 function DetailRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 py-2.5">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right font-medium text-slate-900">{children}</dd>
+    <div className="flex items-baseline justify-between gap-4 py-2.5 text-[13px]">
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className="text-right font-medium text-ink">{children}</dd>
     </div>
   );
 }
@@ -112,49 +112,57 @@ export function BookDetail() {
       <PageHeader
         back={{ to: '/', label: 'Volver al inventario' }}
         title={book.title}
-        subtitle={`${book.author} · ISBN ${book.isbn}`}
+        subtitle={
+          <>
+            {book.author}
+            <span className="mx-2 text-line-strong">·</span>
+            <span className="tabular">ISBN {book.isbn}</span>
+          </>
+        }
         actions={
           <>
             <Link className={buttonStyles('secondary')} to={`/books/${book.id}/edit`}>
-              <Pencil size={16} aria-hidden="true" />
+              <Pencil size={15} aria-hidden="true" />
               Editar
             </Link>
-            <Button
-              type="button"
-              variant="dangerSoft"
-              onClick={() => setConfirmingDeletion(true)}
-            >
-              <Trash2 size={16} aria-hidden="true" />
+            <Button type="button" variant="secondary" onClick={() => setConfirmingDeletion(true)}>
+              <Trash2 size={15} aria-hidden="true" />
               Eliminar
             </Button>
           </>
         }
       />
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <Card>
           <CardBody>
-            <div className="mb-4 flex items-center justify-between gap-4 rounded-lg bg-slate-50 px-4 py-3.5 ring-1 ring-slate-200 ring-inset">
+            {/* El coste es el dato del que cuelga todo lo demás de la pantalla,
+                así que abre la ficha en lugar de ser un renglón más. */}
+            <div className="mb-5 flex items-end justify-between gap-4 border-b border-line pb-5">
               <div>
-                <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-ink-subtle uppercase">
                   Coste de importación
                 </p>
-                <p className="mt-0.5 text-2xl font-bold tabular-nums text-slate-900">
+                <p className="mt-2 text-[2rem] leading-none font-semibold tabular tracking-[-0.025em] text-ink">
                   {formatUsd(book.cost_usd)}
                 </p>
               </div>
               <StockBadge quantity={book.stock_quantity} />
             </div>
 
-            <dl className="divide-y divide-slate-200 text-sm" data-testid="book-details">
+            <dl className="divide-y divide-line" data-testid="book-details">
               <DetailRow label="Categoría">{book.category}</DetailRow>
               <DetailRow label="País del proveedor">{book.supplier_country}</DetailRow>
-              <DetailRow label="Stock">{book.stock_quantity}</DetailRow>
+              <DetailRow label="Stock">
+                <span className="tabular">{book.stock_quantity}</span>
+              </DetailRow>
               <DetailRow label="Precio de venta">
                 {book.selling_price_local === null ? (
-                  <span className="font-normal text-slate-400">Sin calcular</span>
+                  <span className="font-normal text-ink-subtle">Sin calcular</span>
                 ) : (
-                  formatCurrency(book.selling_price_local, LOCAL_CURRENCY)
+                  <span className="tabular">
+                    {formatCurrency(book.selling_price_local, LOCAL_CURRENCY)}
+                  </span>
                 )}
               </DetailRow>
               <DetailRow label="Alta">{formatDate(book.created_at)}</DetailRow>
@@ -164,12 +172,12 @@ export function BookDetail() {
         </Card>
 
         <Card>
-          <CardHeader title="Precio de venta" icon={<Calculator size={16} aria-hidden="true" />} />
+          <CardHeader title="Precio de venta" icon={<Calculator size={15} aria-hidden="true" />} />
           <CardBody>
             {calculation ? (
               <PriceBreakdown calculation={calculation} />
             ) : (
-              <p className="text-[13px] text-slate-500">
+              <p className="text-[13px] leading-relaxed text-ink-muted">
                 Calcula el precio sugerido con la tasa de cambio actual y un margen del 40%. El
                 resultado se guarda en el libro.
               </p>
@@ -183,12 +191,12 @@ export function BookDetail() {
             >
               {calculating ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
                   Consultando tasa...
                 </>
               ) : (
                 <>
-                  <Calculator size={16} aria-hidden="true" />
+                  <Calculator size={15} aria-hidden="true" />
                   {calculation ? 'Recalcular precio' : 'Calcular precio de venta'}
                 </>
               )}
@@ -202,8 +210,8 @@ export function BookDetail() {
           title="¿Eliminar este libro?"
           description={
             <>
-              Se eliminará <strong>{book.title}</strong> del inventario. Esta acción no se puede
-              deshacer.
+              Se eliminará <strong className="font-semibold text-ink">{book.title}</strong> del
+              inventario. Esta acción no se puede deshacer.
             </>
           }
           confirmLabel="Eliminar libro"

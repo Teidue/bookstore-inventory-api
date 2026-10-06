@@ -74,3 +74,11 @@ export interface BookFilters {
   /** Vacío significa "sin filtro de stock bajo". */
   low_stock_threshold: string;
 }
+
+/** Cifras de cabecera del inventario, derivadas de los endpoints de listado. */
+export interface InventoryCounts {
+  total: number;
+  /** Stock menor o igual que el umbral; incluye los agotados. */
+  lowStock: number;
+  outOfStock: number;
+}

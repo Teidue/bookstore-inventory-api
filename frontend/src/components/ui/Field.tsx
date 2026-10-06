@@ -17,18 +17,18 @@ interface FieldProps {
 export function Field({ id, label, error, hint, children }: FieldProps) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label className="text-[13px] font-semibold text-slate-900" htmlFor={id}>
+      <label className="text-[13px] font-medium text-ink" htmlFor={id}>
         {label}
       </label>
       {children}
       {hint && !error && (
-        <span className="text-xs text-slate-500" id={`${id}-hint`}>
+        <span className="text-[12px] leading-snug text-ink-subtle" id={`${id}-hint`}>
           {hint}
         </span>
       )}
       {error && (
         <span
-          className="text-xs font-medium text-red-600"
+          className="text-[12px] leading-snug font-medium text-critical"
           id={`${id}-error`}
           data-testid="field-error"
         >
