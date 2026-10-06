@@ -40,7 +40,7 @@ export class BooksService {
    * SELECT previo: entre comprobar e insertar cabe otra petición, y esa
    * ventana es justo la que rompe una comprobación hecha a mano.
    */
-  async crear(dto: CreateBookDto): Promise<BookResponse> {
+  async create(dto: CreateBookDto): Promise<BookResponse> {
     const book = this.repository.create({
       title: dto.title,
       author: dto.author,
@@ -68,7 +68,7 @@ export class BooksService {
    * tabla entera para filtrarla en memoria funcionaría con el seed y se
    * hundiría con un inventario real.
    */
-  async listar(filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
+  async list(filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
     const query = this.repository.createQueryBuilder('book');
 
     this.applyFilters(query, filters);
@@ -91,7 +91,7 @@ export class BooksService {
   }
 
   /** PUT: el cuerpo sustituye al recurso completo, salvo el precio calculado. */
-  async actualizar(id: number, dto: UpdateBookDto): Promise<BookResponse> {
+  async update(id: number, dto: UpdateBookDto): Promise<BookResponse> {
     const book = await this.findBookOrFail(id);
 
     book.title = dto.title;
@@ -110,7 +110,7 @@ export class BooksService {
     }
   }
 
-  async eliminar(id: number): Promise<void> {
+  async remove(id: number): Promise<void> {
     const book = await this.findBookOrFail(id);
     await this.repository.remove(book);
   }
@@ -180,7 +180,7 @@ export class BooksService {
     const book = await this.repository.findOne({ where: { id } });
 
     if (!book) {
-      throw DomainException.noEncontrado(
+      throw DomainException.notFound(
         ErrorCode.BOOK_NOT_FOUND,
         `No existe ningún libro con id ${id}.`,
       );
@@ -193,7 +193,7 @@ export class BooksService {
     if (error instanceof QueryFailedError) {
       const code = (error as QueryFailedError & { code?: string }).code;
       if (code === PG_UNIQUE_VIOLATION) {
-        return DomainException.conflicto(
+        return DomainException.conflict(
           ErrorCode.DUPLICATE_ISBN,
           `Ya existe un libro con el isbn ${isbn}.`,
         );

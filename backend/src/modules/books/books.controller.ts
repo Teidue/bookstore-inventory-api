@@ -38,53 +38,50 @@ export class BooksController {
   @ApiResponse({ status: 201, description: 'Libro creado.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos.' })
   @ApiResponse({ status: 409, description: 'Ya existe un libro con ese ISBN.' })
-  crear(@Body() dto: CreateBookDto): Promise<BookResponse> {
-    return this.booksService.crear(dto);
+  create(@Body() dto: CreateBookDto): Promise<BookResponse> {
+    return this.booksService.create(dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Lista libros con paginación y filtros opcionales.' })
-  listar(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
-    return this.booksService.listar(filters);
+  list(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
+    return this.booksService.list(filters);
   }
 
   @Get('search')
   @ApiOperation({ summary: 'Busca libros por categoría. Admite paginación.' })
-  buscar(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
-    return this.booksService.listar(filters);
+  search(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
+    return this.booksService.list(filters);
   }
 
   @Get('low-stock')
   @ApiOperation({ summary: 'Libros con inventario bajo. Umbral por defecto: 10.' })
-  stockBajo(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
+  lowStock(@Query() filters: FilterBooksDto): Promise<PaginatedResponse<BookResponse>> {
     // El enunciado documenta el parámetro como `threshold` y fija 10 por
     // defecto en este endpoint.  Se modifica la instancia en vez de
     // esparcirla, porque `offset` es un getter y un literal lo perdería.
     filters.low_stock_threshold = filters.threshold ?? filters.low_stock_threshold ?? 10;
-    return this.booksService.listar(filters);
+    return this.booksService.list(filters);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtiene un libro por su identificador.' })
   @ApiResponse({ status: 404, description: 'El libro no existe.' })
-  obtener(@Param('id', ParseIntPipe) id: number): Promise<BookResponse> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<BookResponse> {
     return this.booksService.findOne(id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Actualiza por completo un libro existente.' })
-  actualizar(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateBookDto,
-  ): Promise<BookResponse> {
-    return this.booksService.actualizar(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBookDto): Promise<BookResponse> {
+    return this.booksService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Elimina un libro.' })
-  eliminar(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.booksService.eliminar(id);
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.booksService.remove(id);
   }
 
   @Post(':id/calculate-price')

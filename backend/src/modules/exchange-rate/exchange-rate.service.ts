@@ -130,7 +130,7 @@ export class ExchangeRateService {
 
     if (this.fallbackRate === undefined) {
       this.logger.error(`Sin tasa para ${code} y sin respaldo configurado: ${reason}`);
-      throw DomainException.servicioNoDisponible(
+      throw DomainException.serviceUnavailable(
         ErrorCode.EXCHANGE_RATE_UNAVAILABLE,
         'El servicio de tasas de cambio no está disponible. Inténtalo de nuevo más tarde.',
       );

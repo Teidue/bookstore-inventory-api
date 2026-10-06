@@ -31,7 +31,7 @@ describe('FiltroExcepciones', () => {
   it('traduce una excepción de dominio conservando su código', () => {
     const { host, status, json } = fakeContext('/books/999');
 
-    filter.catch(DomainException.noEncontrado(ErrorCode.BOOK_NOT_FOUND, 'No existe.'), host);
+    filter.catch(DomainException.notFound(ErrorCode.BOOK_NOT_FOUND, 'No existe.'), host);
 
     expect(status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
     expect(json).toHaveBeenCalledWith(

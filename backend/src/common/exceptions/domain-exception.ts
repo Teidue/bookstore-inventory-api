@@ -15,19 +15,19 @@ export class DomainException extends HttpException {
     super({ code: code, message: message }, status);
   }
 
-  static noEncontrado(code: ErrorCode, message: string): DomainException {
+  static notFound(code: ErrorCode, message: string): DomainException {
     return new DomainException(code, message, HttpStatus.NOT_FOUND);
   }
 
-  static conflicto(code: ErrorCode, message: string): DomainException {
+  static conflict(code: ErrorCode, message: string): DomainException {
     return new DomainException(code, message, HttpStatus.CONFLICT);
   }
 
-  static peticionInvalida(code: ErrorCode, message: string): DomainException {
+  static badRequest(code: ErrorCode, message: string): DomainException {
     return new DomainException(code, message, HttpStatus.BAD_REQUEST);
   }
 
-  static servicioNoDisponible(code: ErrorCode, message: string): DomainException {
+  static serviceUnavailable(code: ErrorCode, message: string): DomainException {
     return new DomainException(code, message, HttpStatus.SERVICE_UNAVAILABLE);
   }
 }
