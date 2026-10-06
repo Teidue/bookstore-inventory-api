@@ -154,10 +154,11 @@ export class BooksService {
 
   private applyFilters(query: SelectQueryBuilder<Book>, filters: FilterBooksDto): void {
     if (filters.category) {
-      // Insensible a mayúsculas: el usuario no tiene por qué escribir la
-      // categoría exactamente como se guardó.
-      query.andWhere('LOWER(book.category) = LOWER(:category)', {
-        category: filters.category,
+      // Por coincidencia parcial e insensible a mayúsculas: es un cuadro de
+      // texto libre, y con igualdad exacta «Nove» o «Literatura» devolvían
+      // una tabla vacía justo mientras el usuario todavía estaba escribiendo.
+      query.andWhere('book.category ILIKE :categoryPattern', {
+        categoryPattern: `%${escapeWildcards(filters.category)}%`,
       });
     }
 

@@ -157,6 +157,27 @@ describe('CRUD de libros (e2e)', () => {
   });
 
   describe('GET /books/search y /books/low-stock', () => {
+    it('filtra por coincidencia parcial y sin distinguir mayúsculas', async () => {
+      const partial = await api().get('/books?category=nove&limit=100').expect(200);
+      const categories = (partial.body.data as { category: string }[]).map((l) => l.category);
+
+      expect(categories.length).toBeGreaterThan(0);
+      expect(categories.every((c) => c === 'Novela')).toBe(true);
+
+      // «Literatura» encuentra «Literatura Clásica», que es lo que se espera
+      // de un cuadro de texto, no de un desplegable de valores exactos.
+      const prefix = await api().get('/books?category=literatura').expect(200);
+      expect(
+        prefix.body.data.some((l: { category: string }) => l.category === 'Literatura Clásica'),
+      ).toBe(true);
+    });
+
+    it('trata los comodines de la categoría como texto literal', async () => {
+      const response = await api().get('/books?category=%25').expect(200);
+
+      expect(response.body.meta.total).toBe(0);
+    });
+
     it('search?category= devuelve sólo esa categoría', async () => {
       const response = await api().get('/books/search?category=Novela&limit=100').expect(200);
 
